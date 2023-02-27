@@ -55,9 +55,11 @@ public partial class ProjectDbContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("User");
+            entity.HasKey(e => e.Number);
+
+            entity.ToTable("User");
+
+            entity.Property(e => e.Number).ValueGeneratedNever();
         });
 
         OnModelCreatingPartial(modelBuilder);
