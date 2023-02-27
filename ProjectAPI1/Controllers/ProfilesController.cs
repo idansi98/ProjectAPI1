@@ -77,6 +77,7 @@ namespace ProjectAPI1.Controllers
         [HttpPost]
         public async Task<ActionResult<int>> PostProfile(Profile profile)
         {
+            profile.Id = _context.Profiles.Count();
             _context.Profiles.Add(profile);
             try
             {
@@ -94,7 +95,7 @@ namespace ProjectAPI1.Controllers
                 }
             }
 
-            return _context.Profiles.Count(); ;
+            return profile.Id;
         }
 
         // DELETE: api/Profiles/5
@@ -113,6 +114,15 @@ namespace ProjectAPI1.Controllers
             return NoContent();
         }
 
+        // DELETE: api/Profiles
+        [HttpDelete]
+        public async Task<IActionResult> DeleteProfiles()
+        {
+            _context.Profiles.RemoveRange(_context.Profiles);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
         private bool ProfileExists(int id)
         {
             return _context.Profiles.Any(e => e.Id == id);

@@ -77,6 +77,7 @@ namespace ProjectAPI1.Controllers
         [HttpPost]
         public async Task<ActionResult<int>> PostProblem(Problem problem)
         {
+            problem.Id = _context.Problems.Count();
             _context.Problems.Add(problem);
             try
             {
@@ -94,7 +95,7 @@ namespace ProjectAPI1.Controllers
                 }
             }
 
-            return _context.Problems.Count();
+            return problem.Id;
         }
 
         // DELETE: api/Problems/5
@@ -113,7 +114,17 @@ namespace ProjectAPI1.Controllers
             return NoContent();
         }
 
-        private bool ProblemExists(int id)
+        // DELETE: api/Problems
+        [HttpDelete]
+        public async Task<IActionResult> DeleteProblems()
+        {
+            _context.Problems.RemoveRange(_context.Problems);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+            private bool ProblemExists(int id)
         {
             return _context.Problems.Any(e => e.Id == id);
         }

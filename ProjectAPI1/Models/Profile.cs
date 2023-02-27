@@ -15,5 +15,5 @@ public partial class Profile
 
     public int IsOutdated { get; set; }
 
-    public int IsDeafault { get; set; }
+    public int IsDefault { get; set; }
 }

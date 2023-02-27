@@ -77,6 +77,7 @@ namespace ProjectAPI1.Controllers
         [HttpPost]
         public async Task<ActionResult<int>> PostSolution(Solution solution)
         {
+            solution.Id = _context.Solutions.Count();
             _context.Solutions.Add(solution);
             try
             {
@@ -94,7 +95,7 @@ namespace ProjectAPI1.Controllers
                 }
             }
 
-            return _context.Solutions.Count();
+            return solution.Id;
         }
 
         // DELETE: api/Solutions/5
@@ -108,6 +109,16 @@ namespace ProjectAPI1.Controllers
             }
 
             _context.Solutions.Remove(solution);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        // DELETE: api/Solutions
+        [HttpDelete]
+        public async Task<IActionResult> DeleteSolutions()
+        {
+            _context.Solutions.RemoveRange(_context.Solutions);
             await _context.SaveChangesAsync();
 
             return NoContent();
