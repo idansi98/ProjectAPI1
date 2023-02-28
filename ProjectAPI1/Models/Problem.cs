@@ -11,7 +11,7 @@ public partial class Problem
 
     public string ContainerDimensions { get; set; } = null!;
 
-    public string ExtraPreferences { get; set; } = null!;
+    public string? ExtraPreferences { get; set; }
 
     public int Id { get; set; }
 }
