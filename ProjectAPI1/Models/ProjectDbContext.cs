@@ -41,7 +41,6 @@ public partial class ProjectDbContext : DbContext
             entity.ToTable("Profile");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.ExtraSettings).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Solution>(entity =>

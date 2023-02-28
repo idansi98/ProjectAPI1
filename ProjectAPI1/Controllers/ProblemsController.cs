@@ -94,7 +94,6 @@ namespace ProjectAPI1.Controllers
                     throw;
                 }
             }
-
             return problem.Id;
         }
 
@@ -123,8 +122,7 @@ namespace ProjectAPI1.Controllers
 
             return NoContent();
         }
-
-            private bool ProblemExists(int id)
+        private bool ProblemExists(int id)
         {
             return _context.Problems.Any(e => e.Id == id);
         }
