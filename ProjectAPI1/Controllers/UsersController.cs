@@ -115,6 +115,16 @@ namespace ProjectAPI1.Controllers
             return NoContent();
         }
 
+        // DELETE: api/Users
+        [HttpDelete]
+        public async Task<IActionResult> DeleteUsers()
+        {
+            _context.Users.RemoveRange(_context.Users);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.Number == id);

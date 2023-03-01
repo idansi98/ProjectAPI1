@@ -7,5 +7,5 @@ public partial class User
 {
     public int Number { get; set; }
 
-    public string UserId { get; set; } = null!;
+    public string? UserId { get; set; }
 }
