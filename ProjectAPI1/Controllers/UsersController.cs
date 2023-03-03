@@ -44,8 +44,10 @@ namespace ProjectAPI1.Controllers
             profile.IsOutdated = 0;
             profile.Algorithm = "Ordered";
             profile.Name = "Default";
+           
             // convert it to a model
             Models.Profile profile1 = ClassConvert.ConvertProfile(profile, user.UserId);
+            profile1.UserId = user.UserId;
             // save it to the database
             profile1.Id = _context.Profiles.Count() + 1;
             _context.Profiles.Add(profile1);

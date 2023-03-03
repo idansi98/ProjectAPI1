@@ -47,6 +47,7 @@ namespace ProjectAPI1.Controllers
             profile.IsOutdated = 0;
             Models.Profile profile1 = ClassConvert.ConvertProfile(profile, id);
             profile1.Id = _context.Profiles.Count() + 1;
+            profile1.UserId = id;
             _context.Profiles.Add(profile1);
             try
             {

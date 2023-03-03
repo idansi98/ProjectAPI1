@@ -20,10 +20,19 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
+        // TEMP
+        // GET api/Problems
+        [HttpGet]
+        public async Task<ActionResult<List<Classes.Problem>>> GetProblems()
+        {
+            List<Models.Problem> problems = await _context.Problems.ToListAsync();
+            return Ok(ClassConvert.ConvertProblems(problems));
+        }
+
 
         // GET: api/Problems/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Classes.Problem>> GetProblems(String id)
+        public async Task<ActionResult<List<Classes.Problem>>> GetProblems(String id)
         {
             if (id == null)
             {

@@ -1,5 +1,6 @@
 ﻿using ProjectAPI1.Classes;
 using ProjectAPI1.Models;
+using System.Diagnostics;
 
 namespace ProjectAPI1.Models
 {
@@ -49,6 +50,7 @@ namespace ProjectAPI1.Models
 
         public static Classes.Profile ConvertProfile(Models.Profile profile)
         {
+
             Classes.Profile profile1 = new Classes.Profile();
             profile1.Id = profile.Id;
             profile1.Name = profile.Name;
@@ -56,6 +58,9 @@ namespace ProjectAPI1.Models
             profile1.ExtraSettings = profile.ExtraSettings;
             profile1.IsOutdated = profile.IsOutdated;
             profile1.IsDefault = profile.IsDefault;
+            profile1.User = new User();
+            profile1.User.UserId = profile.UserId;
+            // print json of both
             return profile1;
         }
 
@@ -69,6 +74,7 @@ namespace ProjectAPI1.Models
             profile1.IsOutdated = profile.IsOutdated;
             profile1.IsDefault = profile.IsDefault;
             profile1.UserId = userID;
+            // print json of both
             return profile1;
         }
 

@@ -3,7 +3,6 @@
 namespace ProjectAPI1.Classes
 {
 
-
 #nullable enable
     public class Box
     {
@@ -143,5 +142,6 @@ namespace ProjectAPI1.Classes
             Problem = problem;
         }
     }
+
 }
 

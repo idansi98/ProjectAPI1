@@ -19,27 +19,30 @@ namespace ProjectAPI1.Controllers
         {
             _context = context;
         }
-
+        //TEMP
+        // GET: api/Solutions
+        [HttpGet]
+        public async Task<ActionResult<List<Classes.Solution>>> GetSolutions()
+        {
+            List<Models.Solution> solutions = await _context.Solutions.ToListAsync();
+            return Ok(ClassConvert.ConvertSolutions(solutions));
+        }
 
         // GET: api/Solutions/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<List<Classes.Solution>>> GetSolutions(string userID)
+        public async Task<ActionResult<List<Classes.Solution>>> GetSolutions(int id)
         {
             List<Models.Solution> solutions = await _context.Solutions.ToListAsync();
-            List<Models.Solution> userSolutions = new List<Models.Solution>();
-            // filter all solutions so only solutions with the same user id are returned
+            List<Models.Solution> problemSolutions = new List<Models.Solution>();
+            // filter all solutions so only solutions with the same problem are reurned
             foreach (Models.Solution solution in solutions)
             {
-                int profileID = solution.ProfileId;
-                // find the profile in DB
-                Models.Profile profile = await _context.Profiles.FindAsync(profileID);
-                string userID2 = profile.UserId;
-                if (userID2 == userID)
+                if (solution.ProblemId == id)
                 {
-                    userSolutions.Add(solution);
+                    problemSolutions.Add(solution);
                 }
             }
-            return Ok(ClassConvert.ConvertSolutions(userSolutions));
+            return Ok(ClassConvert.ConvertSolutions(problemSolutions));
         }
 
 
