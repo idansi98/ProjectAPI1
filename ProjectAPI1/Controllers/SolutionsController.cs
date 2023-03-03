@@ -20,109 +20,28 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
-        // GET: api/Solutions
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Solution>>> GetSolutions()
-        {
-            return await _context.Solutions.ToListAsync();
-        }
 
         // GET: api/Solutions/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Solution>> GetSolution(int id)
+        public async Task<ActionResult<List<Classes.Solution>>> GetSolutions(string userID)
         {
-            var solution = await _context.Solutions.FindAsync(id);
-
-            if (solution == null)
+            List<Models.Solution> solutions = await _context.Solutions.ToListAsync();
+            List<Models.Solution> userSolutions = new List<Models.Solution>();
+            // filter all solutions so only solutions with the same user id are returned
+            foreach (Models.Solution solution in solutions)
             {
-                return NotFound();
-            }
-
-            return solution;
-        }
-
-        // PUT: api/Solutions/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutSolution(int id, Solution solution)
-        {
-            if (id != solution.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(solution).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!SolutionExists(id))
+                int profileID = solution.ProfileId;
+                // find the profile in DB
+                Models.Profile profile = await _context.Profiles.FindAsync(profileID);
+                string userID2 = profile.UserId;
+                if (userID2 == userID)
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
+                    userSolutions.Add(solution);
                 }
             }
-
-            return NoContent();
+            return Ok(ClassConvert.ConvertSolutions(userSolutions));
         }
 
-        // POST: api/Solutions
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<int>> PostSolution(Solution solution)
-        {
-            solution.Id = _context.Solutions.Count();
-            _context.Solutions.Add(solution);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (SolutionExists(solution.Id))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return solution.Id;
-        }
-
-        // DELETE: api/Solutions/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSolution(int id)
-        {
-            var solution = await _context.Solutions.FindAsync(id);
-            if (solution == null)
-            {
-                return NotFound();
-            }
-
-            _context.Solutions.Remove(solution);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        // DELETE: api/Solutions
-        [HttpDelete]
-        public async Task<IActionResult> DeleteSolutions()
-        {
-            _context.Solutions.RemoveRange(_context.Solutions);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
 
         private bool SolutionExists(int id)
         {

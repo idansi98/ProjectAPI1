@@ -20,100 +20,28 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
-        // GET: api/UnsolvedProblems
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<UnsolvedProblem>>> GetUnsolvedProblems()
-        {
-            return await _context.UnsolvedProblems.ToListAsync();
-        }
 
         // GET: api/UnsolvedProblems/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<UnsolvedProblem>> GetUnsolvedProblem(long id)
+        public async Task<ActionResult<List<UnsolvedProblem>>> GetUnsolvedProblems(string id)
         {
-            var unsolvedProblem = await _context.UnsolvedProblems.FindAsync(id);
-
-            if (unsolvedProblem == null)
+            List<UnsolvedProblem> unsolvedProblems = await _context.UnsolvedProblems.ToListAsync();
+            List<UnsolvedProblem> userUnsolvedProblems = new List<UnsolvedProblem>();
+            // filter all unsolved problems so only unsolved problems with the same user id are returned
+            foreach (UnsolvedProblem unsolvedProblem in unsolvedProblems)
             {
-                return NotFound();
-            }
-
-            return unsolvedProblem;
-        }
-
-        // PUT: api/UnsolvedProblems/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUnsolvedProblem(long id, UnsolvedProblem unsolvedProblem)
-        {
-            if (id != unsolvedProblem.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(unsolvedProblem).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UnsolvedProblemExists(id))
+                int profileID = unsolvedProblem.ProfileId;
+                // find the profile in DB
+                Models.Profile profile = await _context.Profiles.FindAsync(profileID);
+                string userID2 = profile.UserId;
+                if (userID2 == id)
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
+                    userUnsolvedProblems.Add(unsolvedProblem);
                 }
             }
-
-            return NoContent();
+            return Ok(userUnsolvedProblems);    
         }
 
-        // POST: api/UnsolvedProblems
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<long>> PostUnsolvedProblem(UnsolvedProblem unsolvedProblem)
-        {
-            var RandomInt64 = new Random();
-            unsolvedProblem.Id = RandomInt64.NextInt64();
-            _context.UnsolvedProblems.Add(unsolvedProblem);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (UnsolvedProblemExists(unsolvedProblem.Id))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return unsolvedProblem.Id;
-        }
-
-        // DELETE: api/UnsolvedProblems/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUnsolvedProblem(long id)
-        {
-            var unsolvedProblem = await _context.UnsolvedProblems.FindAsync(id);
-            if (unsolvedProblem == null)
-            {
-                return NotFound();
-            }
-
-            _context.UnsolvedProblems.Remove(unsolvedProblem);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
 
         private bool UnsolvedProblemExists(long id)
         {

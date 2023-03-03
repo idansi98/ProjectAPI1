@@ -23,63 +23,11 @@ namespace ProjectAPI1.Controllers
 
         // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        public async Task<ActionResult<String>> CreateUser()
         {
-            return await _context.Users.ToListAsync();
-        }
-
-        // GET: api/Users/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> GetUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            return user;
-        }
-
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutUser(int id, User user)
-        {
-            if (id != user.Number)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(user).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!UserExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<string>> PostUser(User user)
-        {
-            user.Number = _context.Users.Count();
+         User user = new User();
             user.UserId = GenerateUserID();
+            user.Number = _context.Users.Count() + 1;
             _context.Users.Add(user);
             try
             {
@@ -87,44 +35,48 @@ namespace ProjectAPI1.Controllers
             }
             catch (DbUpdateException)
             {
-                if (UserExists(user.Number))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
+                throw;
             }
-            return user.UserId;
 
-        }
-
-        // DELETE: api/Users/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
+            // give the user a default profile
+            Classes.Profile profile = new Classes.Profile();
+            profile.IsDefault = 1;
+            profile.IsOutdated = 0;
+            profile.Algorithm = "Ordered";
+            profile.Name = "Default";
+            // convert it to a model
+            Models.Profile profile1 = ClassConvert.ConvertProfile(profile, user.UserId);
+            // save it to the database
+            profile1.Id = _context.Profiles.Count() + 1;
+            _context.Profiles.Add(profile1);
+            try
             {
-                return NotFound();
+                await _context.SaveChangesAsync();
             }
-
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            catch (DbUpdateException)
+            {
+                throw;
+            }
+            return Ok(user.UserId); 
         }
 
-        // DELETE: api/Users
-        [HttpDelete]
-        public async Task<IActionResult> DeleteUsers()
+
+        // GET: api/Users/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<User>> CheckUserExists(string id)
         {
-            _context.Users.RemoveRange(_context.Users);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            // get list of all users
+            List<User> users = await _context.Users.ToListAsync();
+            // filter all users so only users with the same user id are returned
+            users = users.Where(u => u.UserId == id).ToList();
+            if(users.Count > 0)
+            {
+                return Ok("User exists");
+            }
+            return NotFound("User doesn't exist");
         }
+
+ 
 
         private bool UserExists(int id)
         {

@@ -20,111 +20,29 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
-        // GET: api/Problems
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Problem>>> GetProblems()
-        {
-            return await _context.Problems.ToListAsync();
-        }
 
         // GET: api/Problems/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Problem>> GetProblem(int id)
+        public async Task<ActionResult<Classes.Problem>> GetProblems(String id)
         {
-            var problem = await _context.Problems.FindAsync(id);
-
-            if (problem == null)
-            {
-                return NotFound();
-            }
-
-            return problem;
-        }
-
-        // PUT: api/Problems/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProblem(int id, Problem problem)
-        {
-            if (id != problem.Id)
+            if (id == null)
             {
                 return BadRequest();
             }
 
-            _context.Entry(problem).State = EntityState.Modified;
-
-            try
+            List<Models.Problem> problems = await _context.Problems.ToListAsync();
+            List<Models.Problem> userProblems = new List<Models.Problem>();
+            // filter all problems so only problems with the same user id are returned
+            foreach (Models.Problem problem in problems)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProblemExists(id))
+                if (problem.ExtraPreferences == id)
                 {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
+                    userProblems.Add(problem);
                 }
             }
-
-            return NoContent();
+            return Ok(ClassConvert.ConvertProblems(userProblems));
         }
 
-        // POST: api/Problems
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<int>> PostProblem(Problem problem)
-        {
-            problem.Id = _context.Problems.Count();
-            _context.Problems.Add(problem);
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (ProblemExists(problem.Id))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-            return problem.Id;
-        }
 
-        // DELETE: api/Problems/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteProblem(int id)
-        {
-            var problem = await _context.Problems.FindAsync(id);
-            if (problem == null)
-            {
-                return NotFound();
-            }
-
-            _context.Problems.Remove(problem);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-
-        // DELETE: api/Problems
-        [HttpDelete]
-        public async Task<IActionResult> DeleteProblems()
-        {
-            _context.Problems.RemoveRange(_context.Problems);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
-        private bool ProblemExists(int id)
-        {
-            return _context.Problems.Any(e => e.Id == id);
-        }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectAPI1.Models;
+using ProjectAPI1.Classes;
 
 namespace ProjectAPI1.Controllers
 {
@@ -20,65 +21,33 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
-        // GET: api/Profiles
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Profile>>> GetProfiles()
-        {
-            return await _context.Profiles.ToListAsync();
-        }
 
         // GET: api/Profiles/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Profile>> GetProfile(int id)
+        public async Task<ActionResult<List<Classes.Profile>>> GetProfiles(string id)
         {
-            var profile = await _context.Profiles.FindAsync(id);
+            List<Models.Profile> profiles = await _context.Profiles.ToListAsync();
+            // filter all profiles so only profiles with the same user id are returned
+            profiles = profiles.Where(p => p.UserId == id).ToList();
 
-            if (profile == null)
-            {
-                return NotFound();
-            }
+           List<Classes.Profile> profiles2 = ClassConvert.ConvertProfiles(profiles);
+           // filter all the profiles so only profiles that arent outdated are returned
+            profiles2 = profiles2.Where(p => p.IsOutdated == 1).ToList();
 
-            return profile;
+
+            return Ok(ClassConvert.ConvertProfiles(profiles));
         }
 
-        // PUT: api/Profiles/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutProfile(int id, Profile profile)
+
+        // POST: api/Profiles/5
+        [HttpPost ("{id}")]
+        public async Task<ActionResult<int>> PostProfile(String id, Classes.Profile profile)
         {
-            if (id != profile.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(profile).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ProfileExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/Profiles
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<int>> PostProfile(Profile profile)
-        {
-            profile.Id = _context.Profiles.Count();
-            _context.Profiles.Add(profile);
+            profile.IsDefault = 0;
+            profile.IsOutdated = 0;
+            Models.Profile profile1 = ClassConvert.ConvertProfile(profile, id);
+            profile1.Id = _context.Profiles.Count() + 1;
+            _context.Profiles.Add(profile1);
             try
             {
                 await _context.SaveChangesAsync();
@@ -94,35 +63,35 @@ namespace ProjectAPI1.Controllers
                     throw;
                 }
             }
-
-            return profile.Id;
+            return Ok(profile1.Id);
         }
 
         // DELETE: api/Profiles/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteProfile(int id)
         {
+           
             var profile = await _context.Profiles.FindAsync(id);
             if (profile == null)
             {
                 return NotFound();
             }
+            // convert the profile to a class profile
+            Classes.Profile profile2 = ClassConvert.ConvertProfile(profile);
+            // check if the profile is the default profile
+            if (profile2.IsDefault == 1)
+            {
+                return BadRequest();
+            } else
+            {
+                _context.Profiles.Remove(profile);
+                await _context.SaveChangesAsync();
+                return NoContent();
+            }
 
-            _context.Profiles.Remove(profile);
-            await _context.SaveChangesAsync();
 
-            return NoContent();
         }
-
-        // DELETE: api/Profiles
-        [HttpDelete]
-        public async Task<IActionResult> DeleteProfiles()
-        {
-            _context.Profiles.RemoveRange(_context.Profiles);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
+        // profile exists method
         private bool ProfileExists(int id)
         {
             return _context.Profiles.Any(e => e.Id == id);
