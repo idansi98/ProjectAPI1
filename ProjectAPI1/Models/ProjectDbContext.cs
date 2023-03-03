@@ -8,11 +8,13 @@ public partial class ProjectDbContext : DbContext
 {
     public ProjectDbContext()
     {
+        Database.EnsureCreated();
     }
 
     public ProjectDbContext(DbContextOptions<ProjectDbContext> options)
         : base(options)
     {
+        Database.EnsureCreated();
     }
 
     public virtual DbSet<Problem> Problems { get; set; }
@@ -20,6 +22,8 @@ public partial class ProjectDbContext : DbContext
     public virtual DbSet<Profile> Profiles { get; set; }
 
     public virtual DbSet<Solution> Solutions { get; set; }
+
+    public virtual DbSet<UnsolvedProblem> UnsolvedProblems { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
 
@@ -48,6 +52,13 @@ public partial class ProjectDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK_Table_1");
 
             entity.ToTable("Solution");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+        });
+
+        modelBuilder.Entity<UnsolvedProblem>(entity =>
+        {
+            entity.ToTable("UnsolvedProblem");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
         });

@@ -16,4 +16,6 @@ public partial class Profile
     public int IsOutdated { get; set; }
 
     public int IsDefault { get; set; }
+
+    public string? UserId { get; set; }
 }
