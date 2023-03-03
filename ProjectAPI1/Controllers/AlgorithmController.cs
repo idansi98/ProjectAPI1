@@ -20,10 +20,12 @@ namespace ProjectAPI1.Controllers
     public class AlgorithmController : ControllerBase
     {
         private readonly ProjectDbContext _context;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
-        public AlgorithmController(ProjectDbContext context)
+        public AlgorithmController(ProjectDbContext context, IServiceScopeFactory serviceScopeFactory)
         {
             _context = context;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
 
@@ -51,12 +53,15 @@ namespace ProjectAPI1.Controllers
                 _context.Problems.Add(problem1);
                 await _context.SaveChangesAsync();
             }
-            _ = RunAlgorithm(profile, problem, problem1);
-
+            using (var scope = _serviceScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<ProjectDbContext>();
+                _ = RunAlgorithm(context, profile, problem, problem1);
+            }
             return Ok();
         }
 
-        private async Task RunAlgorithm(Classes.Profile profile, Classes.Problem problem, Models.Problem problem1)
+        private async Task RunAlgorithm(ProjectDbContext context, Classes.Profile profile, Classes.Problem problem, Models.Problem problem1)
         {
             AlgorithmFactory algorithmFactory = new();
             Algorithm alg = algorithmFactory.GetAlgorithm(profile);
