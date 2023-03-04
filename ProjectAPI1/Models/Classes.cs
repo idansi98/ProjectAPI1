@@ -8,6 +8,7 @@ namespace ProjectAPI1.Classes
     {
         public string? Description { get; set; }
         public Dimensions Dimensions { get; set; } = default!;
+        // will be coded as x:y:z of position to place it
         public string? Restrictions { get; set; }
         public int OrderInList { get; set; }
         public string? Preferences { get; set; }

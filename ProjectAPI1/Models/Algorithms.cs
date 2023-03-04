@@ -84,7 +84,15 @@ namespace ProjectAPI1.Classes
                 {
                     return false;
                 }
+                // check for no restrictions
+                if(box.Restrictions != null)
+                {
+                    return false;
+                }
             }
+           
+
+
             return true;
         }
 
@@ -125,7 +133,11 @@ namespace ProjectAPI1.Classes
         }
 
         protected Box GetRandomOrientation(Box box, float heat)
-        {
+        {   if (box.Restrictions != null)
+            {
+                Box newBox2 = new Box(box.Description, box.Dimensions, box.Restrictions, box.OrderInList, box.Preferences);
+                return newBox2;
+            }
             Box newBox = new Box(box.Description, box.Dimensions, box.Restrictions, box.OrderInList, box.Preferences);
             // get number between 0 and 1
             System.Random randomGenerator = new System.Random();
@@ -226,8 +238,27 @@ namespace ProjectAPI1.Classes
             return boxOrientations;
         }
 
-        protected BoxPlacement getFirstAvailableBoxPlacement(List<BoxPlacement> boxPlacements, Box box)
+        protected BoxPlacement? getFirstAvailableBoxPlacement(List<BoxPlacement> boxPlacements, Box box)
         {
+            // first check if it is restricted to a specific positions
+            if (box.Restrictions != null)
+            {
+                string[] split =box.Restrictions.Split(':');
+                Position position2 = new Position();
+                position2.x = float.Parse(split[0]);
+                position2.y = float.Parse(split[1]);
+                position2.z = float.Parse(split[2]);
+                BoxPlacement boxPlacement = new BoxPlacement();
+                boxPlacement.Box = box;
+                boxPlacement.Position = position2;
+                if (Fits(boxPlacements, boxPlacement))
+                {
+                    return boxPlacement;
+                } else
+                {
+                    return null;
+                }
+            }
             Position position = new Position();
             position.x = 0;
             position.y = 0;
@@ -499,7 +530,10 @@ namespace ProjectAPI1.Classes
             List<BoxPlacement> placements = new List<BoxPlacement>();
             foreach (BoxPlacement boxPlacement in sol.Placements)
             {
-                if (boxPlacement.Box.Dimensions.Height == dimensions.Height && boxPlacement.Box.Dimensions.Width == dimensions.Width && boxPlacement.Box.Dimensions.Length == dimensions.Length)
+                if (boxPlacement.Box.Dimensions.Height == dimensions.Height &&
+                    boxPlacement.Box.Dimensions.Width == dimensions.Width &&
+                    boxPlacement.Box.Dimensions.Length == dimensions.Length &&
+                    boxPlacement.Box.Restrictions == null)
                 {
                     placements.Add(boxPlacement);
                 }
@@ -558,6 +592,11 @@ namespace ProjectAPI1.Classes
             List<Classes.Solution> solutions = new List<Classes.Solution>();
             // add with no rotations
             solutions.Add(sol);
+            // if one of the boxes has restrictions -> return
+            List<BoxPlacement> placements = sol.Placements;
+
+
+
         // add with 180 rotation -> all items in the back are now in front
             Classes.Solution rotated180 = new Classes.Solution();
             rotated180.ProblemId = sol.ProblemId;
@@ -565,6 +604,11 @@ namespace ProjectAPI1.Classes
             rotated180.Placements = new List<BoxPlacement>();
             foreach (BoxPlacement placement in sol.Placements)
             {
+                // return with no rotation if restrictions apply
+                if (placement.Box.Restrictions != null)
+                {
+                    return solutions;
+                }
                 BoxPlacement rotatedPlacement = new BoxPlacement();
                 rotatedPlacement.Box = placement.Box;
                 rotatedPlacement.Position = new Position();
