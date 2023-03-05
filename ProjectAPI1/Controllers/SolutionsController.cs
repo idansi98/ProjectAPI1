@@ -19,7 +19,7 @@ namespace ProjectAPI1.Controllers
         {
             _context = context;
         }
-        //TEMP
+        //TEMP DO NOT USE SPARINGLY
         // GET: api/Solutions
         [HttpGet]
         public async Task<ActionResult<List<Classes.Solution>>> GetSolutions()
@@ -28,6 +28,7 @@ namespace ProjectAPI1.Controllers
             return Ok(ClassConvert.ConvertSolutions(solutions));
         }
 
+        // BY PROBLEM ID
         // GET: api/Solutions/5
         [HttpGet("{id}")]
         public async Task<ActionResult<List<Classes.Solution>>> GetSolutions(int id)

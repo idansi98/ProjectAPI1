@@ -20,7 +20,7 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
-        // TEMP
+        // TEMP DO NOT USE SPARINLGY
         // GET api/Problems
         [HttpGet]
         public async Task<ActionResult<List<Classes.Problem>>> GetProblems()
@@ -29,7 +29,7 @@ namespace ProjectAPI1.Controllers
             return Ok(ClassConvert.ConvertProblems(problems));
         }
 
-
+         // BY USER
         // GET: api/Problems/5
         [HttpGet("{id}")]
         public async Task<ActionResult<List<Classes.Problem>>> GetProblems(String id)
