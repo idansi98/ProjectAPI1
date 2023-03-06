@@ -32,7 +32,7 @@ namespace ProjectAPI1.Controllers
 
            List<Classes.Profile> profiles2 = ClassConvert.ConvertProfiles(profiles);
            // filter all the profiles so only profiles that arent outdated are returned
-            profiles2 = profiles2.Where(p => p.IsOutdated == 0).ToList();
+           // profiles2 = profiles2.Where(p => p.IsOutdated == 0).ToList();
 
 
             return Ok(profiles2);
