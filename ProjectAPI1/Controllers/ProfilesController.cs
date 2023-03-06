@@ -32,11 +32,24 @@ namespace ProjectAPI1.Controllers
 
            List<Classes.Profile> profiles2 = ClassConvert.ConvertProfiles(profiles);
            // filter all the profiles so only profiles that arent outdated are returned
-            profiles2 = profiles2.Where(p => p.IsOutdated == 1).ToList();
+            profiles2 = profiles2.Where(p => p.IsOutdated == 0).ToList();
 
 
-            return Ok(ClassConvert.ConvertProfiles(profiles));
+            return Ok(profiles2);
         }
+
+        /*// GET: api/Profiles
+        [HttpGet]
+        public async Task<ActionResult<List<Classes.Profile>>> GetProfiles()
+        {
+            List<Models.Profile> profiles = await _context.Profiles.ToListAsync();
+            // filter all profiles so only profiles with the same user id are returned
+            //profiles = profiles.Where(p => p.UserId == id).ToList();
+            List<Classes.Profile> profiles2 = ClassConvert.ConvertProfiles(profiles);
+            // filter all the profiles so only profiles that arent outdated are returned
+            profiles2 = profiles2.Where(p => p.IsOutdated == 0).ToList();
+            return Ok(profiles2);
+        }*/
 
 
         // POST: api/Profiles/5
@@ -73,6 +86,7 @@ namespace ProjectAPI1.Controllers
         {
            
             var profile = await _context.Profiles.FindAsync(id);
+            profile.IsOutdated = 1;
             if (profile == null)
             {
                 return NotFound();
@@ -85,7 +99,7 @@ namespace ProjectAPI1.Controllers
                 return BadRequest();
             } else
             {
-                _context.Profiles.Remove(profile);
+                _context.Profiles.Update(profile);
                 await _context.SaveChangesAsync();
                 return NoContent();
             }

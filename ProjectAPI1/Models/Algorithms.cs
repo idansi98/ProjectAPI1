@@ -7,9 +7,6 @@ using Newtonsoft.Json;
 
 namespace ProjectAPI1.Classes
 {
-
-
-
     public class AlgorithmFactory
     {
         public Algorithm GetAlgorithm(Profile profile)
