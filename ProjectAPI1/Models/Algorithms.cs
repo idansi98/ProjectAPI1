@@ -4,6 +4,11 @@ using System;
 using System.Linq;
 using System;
 using Newtonsoft.Json;
+using System.Data.SqlTypes;
+using System.Diagnostics.Metrics;
+using System.Linq;
+using MoreLinq;
+
 
 namespace ProjectAPI1.Classes
 {
@@ -30,29 +35,24 @@ namespace ProjectAPI1.Classes
     public abstract class Algorithm
     {
         protected Profile Profile;
-        protected List<Box> Boxes;
-        protected Dimensions ContainerDimensions;
+        protected List<Box>? Boxes;
+        protected Dimensions? ContainerDimensions;
         protected string? ExtraPreferences;
         protected int ProblemId;
-        public static int Attempts;
         public static int BoxFitted;
         public static bool isInterrupted;
         public float finalScore;
 
-        protected Classes.Solution Solution;
+        protected Classes.Solution? Solution;
 
 
         public Algorithm(Profile profile)
         {
-            finalScore = float.MinValue;
             Boxes = null;
             ContainerDimensions = null;
             ExtraPreferences = null;
             Solution = null;
             Profile = profile;
-            Attempts = 0;
-            BoxFitted = 0;
-            isInterrupted = false;
         }
 
         protected bool CheckVolume(Classes.Problem problem)
@@ -68,6 +68,17 @@ namespace ProjectAPI1.Classes
             return boxesVolume <= containerVolume;
         }
 
+        protected bool HasRestrictions(List<Box> Boxes)
+        {
+            foreach (Box box in Boxes)
+            {
+                if (box.Restrictions != null)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
         protected bool CheckUniform(List<Box> Boxes)
         {
             if (Boxes.Count == 0)
@@ -81,16 +92,28 @@ namespace ProjectAPI1.Classes
                 {
                     return false;
                 }
-                // check for no restrictions
-                if(box.Restrictions != null)
-                {
-                    return false;
-                }
             }
-           
+            if (HasRestrictions(Boxes))
+            {
+                return false;
+            } else
+            {
+                return true;
+            }
+        }
 
-
-            return true;
+        protected List<Dimensions> GetRotations(Dimensions dimensions)
+        {
+            List<Dimensions> rotations = new List<Dimensions>();
+            rotations.Add(dimensions);
+            rotations.Add(new Dimensions(dimensions.Height, dimensions.Width, dimensions.Length));
+            rotations.Add(new Dimensions(dimensions.Length, dimensions.Height, dimensions.Width));
+            rotations.Add(new Dimensions(dimensions.Width, dimensions.Length, dimensions.Height));
+            rotations.Add(new Dimensions(dimensions.Length, dimensions.Width, dimensions.Height));
+            rotations.Add(new Dimensions(dimensions.Height, dimensions.Length, dimensions.Width));
+            // remove duplicates
+            rotations = rotations.Distinct().ToList();
+            return rotations;
         }
 
         protected bool Fits(List<BoxPlacement> boxPlacements, BoxPlacement boxPlacement)
@@ -129,204 +152,10 @@ namespace ProjectAPI1.Classes
             return true;
         }
 
-        protected Box GetRandomOrientation(Box box, float heat)
-        {   if (box.Restrictions != null)
-            {
-                Box newBox2 = new Box(box.Description, box.Dimensions, box.Restrictions, box.OrderInList, box.Preferences);
-                return newBox2;
-            }
-            Box newBox = new Box(box.Description, box.Dimensions, box.Restrictions, box.OrderInList, box.Preferences);
-            // get number between 0 and 1
-            System.Random randomGenerator = new System.Random();
-            float random = (float)randomGenerator.NextDouble();
-            // if random is more than heat then return the box
-            if (random >= heat)
-            {
-                return newBox;
-            }
-            // get random orientation
-            int orientation = randomGenerator.Next(0, 5);
-            switch (orientation)
-            {
-                case 0:
-                    newBox.Dimensions = box.Dimensions;
-                    break;
-                case 1:
-                    newBox.Dimensions = new Dimensions(box.Dimensions.Length, box.Dimensions.Width, box.Dimensions.Height);
-                    break;
-                case 2:
-                    newBox.Dimensions = new Dimensions(box.Dimensions.Height, box.Dimensions.Length, box.Dimensions.Width);
-                    break;
-                case 3:
-                    newBox.Dimensions = new Dimensions(box.Dimensions.Width, box.Dimensions.Height, box.Dimensions.Length);
-                    break;
-                case 4:
-                    newBox.Dimensions = new Dimensions(box.Dimensions.Height, box.Dimensions.Width, box.Dimensions.Length);
-                    break;
-                case 5:
-                    newBox.Dimensions = new Dimensions(box.Dimensions.Length, box.Dimensions.Height, box.Dimensions.Width);
-                    break;
-            }
-            return newBox;
-        }
-
-        protected List<Box> SwapRandomBoxes(List<Box> boxes, float heat)
-        {
-            System.Random randomGenerator = new System.Random();
-            int numberToSwap = (int)(boxes.Count * heat);
-            for (int i = 0; i < numberToSwap; i++)
-            {
-                int index1 = randomGenerator.Next(0, boxes.Count);
-                int index2 = randomGenerator.Next(0, boxes.Count);
-                Box temp = boxes[index1];
-                boxes[index1] = boxes[index2];
-                boxes[index2] = temp;
-            }
-            return boxes;
-        }
-        protected static float NextFloat(float mean, float stdDev)
-        {
-            System.Random random = new System.Random();
-            double u1 = 1.0 - random.NextDouble(); // uniform random variable
-            double u2 = 1.0 - random.NextDouble(); // uniform random variable
-            double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) *
-                                Math.Sin(2.0 * Math.PI * u2); // random normal variable
-            float randNormal = (float)(mean + stdDev * randStdNormal);
-            return randNormal;
-        }
-
-        protected static float GetNormalHeat()
-        {
-            float heat = NextFloat(0, 0.1f);
-            if (heat < 0)
-            {
-                heat = heat * -1;
-            }
-            return heat;
-        }
-
-        protected List<List<Box>> GetRandomBoxOrientations(List<Box> currentOrientation, int numToGenerate)
-        {
-            List<List<Box>> boxOrientations = new List<List<Box>>();
-            // always have the default one
-            boxOrientations.Add(Boxes);
-
-            // add random ones
-            for (int i = 0; i < numToGenerate; i++)
-            {
-                List<Box> newOrientation = new List<Box>();
-                foreach (Box box in currentOrientation)
-                {
-                    newOrientation.Add(GetRandomOrientation(box, GetNormalHeat()));
-                }
-                newOrientation = SwapRandomBoxes(newOrientation, GetNormalHeat());
-                boxOrientations.Add(newOrientation);
-            }
-
-            // add a completely random one
-            List<Box> boxes = new List<Box>();
-            foreach (Box box in currentOrientation)
-            {
-                boxes.Add(GetRandomOrientation(box, 1f));
-            }
-            boxes = SwapRandomBoxes(boxes, 1f);
-            boxOrientations.Add(boxes);
-
-            return boxOrientations;
-        }
-
-        protected BoxPlacement? getFirstAvailableBoxPlacement(List<BoxPlacement> boxPlacements, Box box)
-        {
-            // first check if it is restricted to a specific positions
-            if (box.Restrictions != null)
-            {
-                string[] split =box.Restrictions.Split(':');
-                Position position2 = new Position();
-                position2.x = float.Parse(split[0]);
-                position2.y = float.Parse(split[1]);
-                position2.z = float.Parse(split[2]);
-                BoxPlacement boxPlacement = new BoxPlacement();
-                boxPlacement.Box = box;
-                boxPlacement.Position = position2;
-                if (Fits(boxPlacements, boxPlacement))
-                {
-                    return boxPlacement;
-                } else
-                {
-                    return null;
-                }
-            }
-            Position position = new Position();
-            position.x = 0;
-            position.y = 0;
-            position.z = 0;
-            List<float> allPossibleX = new List<float>();
-            List<float> allPossibleY = new List<float>();
-            List<float> allPossibleZ = new List<float>();
-            foreach (BoxPlacement boxPlacement in boxPlacements)
-            {
-                allPossibleX.Add(boxPlacement.Position.x + boxPlacement.Box.Dimensions.Width);
-                allPossibleY.Add(boxPlacement.Position.y + boxPlacement.Box.Dimensions.Height);
-                allPossibleZ.Add(boxPlacement.Position.z + boxPlacement.Box.Dimensions.Length);
-            }
-            // add 0,0,0
-            allPossibleX.Add(0);
-            allPossibleY.Add(0);
-            allPossibleZ.Add(0);
-
-            // remove duplicates
-            allPossibleX = allPossibleX.Distinct().ToList();
-            allPossibleY = allPossibleY.Distinct().ToList();
-            allPossibleZ = allPossibleZ.Distinct().ToList();
-            // sort so that the smallest values are first
-            allPossibleX.Sort();
-            allPossibleY.Sort();
-            allPossibleZ.Sort();
-
-
-            // find the first available position
-            foreach (float x in allPossibleX)
-            {
-                foreach (float y in allPossibleY)
-                {
-                    foreach (float z in allPossibleZ)
-                    {
-                        position = new Position();
-                        position.x = x;
-                        position.y = y;
-                        position.z = z;
-                        BoxPlacement boxPlacement = new BoxPlacement();
-                        boxPlacement.Box = box;
-                        boxPlacement.Position = position;
-                        if (Fits(boxPlacements, boxPlacement))
-                        {
-                            return boxPlacement;
-                        }
-                    }
-                }
-            }
-            return null;
-        }
-
         public abstract Classes.Solution Solve(Classes.Problem problem);
-
-        protected List<Dimensions> GetRotations(Dimensions dimensions)
-        {
-            List<Dimensions> rotations = new List<Dimensions>();
-            rotations.Add(dimensions);
-            rotations.Add(new Dimensions(dimensions.Height, dimensions.Width, dimensions.Length));
-            rotations.Add(new Dimensions(dimensions.Length, dimensions.Height, dimensions.Width));
-            rotations.Add(new Dimensions(dimensions.Width, dimensions.Length, dimensions.Height));
-            rotations.Add(new Dimensions(dimensions.Length, dimensions.Width, dimensions.Height));
-            rotations.Add(new Dimensions(dimensions.Height, dimensions.Length, dimensions.Width));
-            // remove duplicates
-            rotations = rotations.Distinct().ToList();
-            return rotations;
-        }
 
         public Classes.Solution GetSolution(Classes.Problem problem)
         {
-            Attempts = 0;
             Boxes = problem.Boxes;
             ContainerDimensions = problem.ContainerDimensions;
             ExtraPreferences = problem.ExtraPreferences;
@@ -434,87 +263,89 @@ namespace ProjectAPI1.Classes
         }
     }
 
-    public class GreedyAlgorithm : Algorithm
+    public class GeneticAlgorithm : Algorithm
     {
-        private List<BoxPlacement> boxPlacements;
-        private int mostBoxesPlaced = 0;
-        private List<Box> bestOrientation;
-        public GreedyAlgorithm(Profile profile) : base(profile)
+        private bool isOrdered;
+        private int maxTime;
+        private float orderLambda;
+        private int maxRoundsWithoutImprovement;
+        private int genesPerGeneration;
+        private List<Dimensions> allBoxDimensions;
+        public GeneticAlgorithm(Profile profile) : base(profile)
         {
-            boxPlacements = new List<BoxPlacement>();
+            isOrdered = true;
+            maxTime = 30;
+            orderLambda = 0.2f;
+            maxRoundsWithoutImprovement = 30;
+            genesPerGeneration = 50;
+            allBoxDimensions = new();
+        }
+        public void SetIsOrdered(bool isOrdered)
+        {
+            this.isOrdered = isOrdered;
         }
 
-        private Classes.Solution SolveForOrientation(Classes.Problem problem, List<Box> boxes)
+        public void SetMaxTime(int maxTime)
         {
-            // our current position in the container
-            int counter = 0;
+            this.maxTime = maxTime;
+        }
+
+        public void SetOrderLambda(float orderLambda)
+        {
+            this.orderLambda = orderLambda;
+        }
+
+        public void SetMaxRoundsWithoutImprovement(int maxRoundsWithoutImprovement)
+        {
+            this.maxRoundsWithoutImprovement= maxRoundsWithoutImprovement;
+        }
+
+        public void SetGenesPerGeneration(int genesPerGeneration)
+        {
+            this.genesPerGeneration = genesPerGeneration;
+        }
+
+        protected List<List<Box>> Mutate(List<Box> gene, int populationSize)
+        {
+            List<List<Box>> genes = new();
+            List<Box> newGene;
+
+            // add random ones
+            for (int i = 0; i < populationSize; i++)
+            {
+                newGene = new List<Box>();
+                foreach (Box box in gene)
+                {
+                    newGene.Add(GetRandomOrientation(box, GetRandomMutationStrength()));
+                }
+                newGene = SwapRandomBoxes(newGene, GetRandomMutationStrength());
+                genes.Add(newGene);
+            }
+
+            // add a completely random one
+            newGene = new List<Box>();
+            foreach (Box box in newGene)
+            {
+                newGene.Add(GetRandomOrientation(box, 1f));
+            }
+            newGene = SwapRandomBoxes(newGene, 1f);
+            genes.Add(newGene);
+
+            return genes;
+        }
+        private List<Dimensions> GetAllBoxDimensions(List<Box> boxes)
+        {
+            List<Dimensions> boxDimensions = new List<Dimensions>();
             foreach (Box box in boxes)
             {
-                BoxPlacement boxPlacement = getFirstAvailableBoxPlacement(boxPlacements, box);
-                if (boxPlacement == null)
-                {
-                    boxPlacements = new List<BoxPlacement>();
-                    if (counter >= mostBoxesPlaced)
-                    {
-                        mostBoxesPlaced = counter;
-                        bestOrientation = boxes;
-                        BoxFitted = counter;
-                    }
-                    finalScore = float.MinValue;
-                    return null;
-                }
-                boxPlacements.Add(boxPlacement);
-                counter++;
-            }
-            Classes.Solution solution = new Classes.Solution();
-            solution.Placements = boxPlacements;
-            solution.ProblemId = ProblemId;
-            solution.ProfileId = Profile.Id;
-            finalScore = float.MaxValue;
-            return solution;
-        }
-
-        public override Classes.Solution Solve(Classes.Problem problem)
-        {
-            Boxes = problem.Boxes;
-            ContainerDimensions = problem.ContainerDimensions;
-            ExtraPreferences = problem.ExtraPreferences;
-            ProblemId = problem.Id;
-
-            bestOrientation = Boxes;
-            while (true)
-            {
-                List<List<Box>> boxOrientations = GetRandomBoxOrientations(bestOrientation, 50);
-                foreach (List<Box> boxOrientation in boxOrientations)
-                {
-                    if (isInterrupted)
-                    {
-                        return null;
-                    }
-                    Attempts++;
-                    Classes.Solution solution = SolveForOrientation(problem, boxOrientation);
-                    if (solution != null)
-                    {
-                        return solution;
-                    }
-                }
-            }
-            // if we get here, we have not found a solution and we have been interrupted
-            return null;
-        }
-    }
-
-    public class GreedyOrderedAlgorithm : Algorithm
-    {
-        public GreedyOrderedAlgorithm(Profile profile) : base(profile) { }
-
-        private List<Dimensions> GetAllBoxDimensions(Classes.Solution solution)
-        {
-            List<Box> Boxes = solution.Placements.Select(x => x.Box).ToList();
-            List<Dimensions> boxDimensions = new List<Dimensions>();
-            foreach (Box box in Boxes)
-            {
-                boxDimensions.Add(box.Dimensions);
+                List<float> dims = new();
+                dims.Add(box.Dimensions.Width);
+                dims.Add(box.Dimensions.Height);
+                dims.Add(box.Dimensions.Width);
+                // sort
+                dims = dims.OrderBy(x => x).ToList();
+                Dimensions dim = new Dimensions(dims[0], dims[1], dims[2]);
+                boxDimensions.Add(dim);
             }
             // remove duplicates
             boxDimensions = boxDimensions.Distinct().ToList();
@@ -522,10 +353,10 @@ namespace ProjectAPI1.Classes
         }
 
         // gets all the boxes that were placed in the solution and have the same dimension 
-        private List<BoxPlacement> GetAllPlacementsForDimension(Dimensions dimensions, Classes.Solution sol)
+        private List<BoxPlacement> GetAllPlacementsForDimension(Dimensions dimensions, List<BoxPlacement> placedBoxes)
         {
             List<BoxPlacement> placements = new List<BoxPlacement>();
-            foreach (BoxPlacement boxPlacement in sol.Placements)
+            foreach (BoxPlacement boxPlacement in placedBoxes)
             {
                 if (boxPlacement.Box.Dimensions.Height == dimensions.Height &&
                     boxPlacement.Box.Dimensions.Width == dimensions.Width &&
@@ -539,41 +370,42 @@ namespace ProjectAPI1.Classes
         }
         private List<Dimensions> GetAllDimentionRotations(Dimensions dimension)
         {
-            List<Dimensions> dimensions = new List<Dimensions>();
-            dimensions.Add(dimension);
-            dimensions.Add(new Dimensions(dimension.Height, dimension.Length, dimension.Width));
-            dimensions.Add(new Dimensions(dimension.Length, dimension.Width, dimension.Height));
-            dimensions.Add(new Dimensions(dimension.Length, dimension.Height, dimension.Width));
-            dimensions.Add(new Dimensions(dimension.Height, dimension.Width, dimension.Length));
-            dimensions.Add(new Dimensions(dimension.Width, dimension.Length, dimension.Height));
+            List<Dimensions> dimensions = new()
+            {
+                dimension,
+                new Dimensions(dimension.Height, dimension.Length, dimension.Width),
+                new Dimensions(dimension.Length, dimension.Width, dimension.Height),
+                new Dimensions(dimension.Length, dimension.Height, dimension.Width),
+                new Dimensions(dimension.Height, dimension.Width, dimension.Length),
+                new Dimensions(dimension.Width, dimension.Length, dimension.Height)
+            };
             dimensions = dimensions.Distinct().ToList();
             return dimensions;
         }
 
-        private void SortSimilar(Dimensions dimensions, Classes.Solution solution)
+        private void SortSimilar(Dimensions dimensions, List<BoxPlacement> placedBoxes)
         {
-            // get all placements for this dimension and sort them where first is the highest z value
+            // Get all placement of same box size
 
             List<Dimensions> allRotatedDims = GetAllDimentionRotations(dimensions);
-
-
-            List<BoxPlacement> placements = new List<BoxPlacement>();
+            List<BoxPlacement> placements = new ();
             foreach (Dimensions dim in allRotatedDims)
             {
-                placements.AddRange(GetAllPlacementsForDimension(dim, solution));
+                placements.AddRange(GetAllPlacementsForDimension(dim, placedBoxes));
             }
+
+            // sort them by Z index
 
             placements.Sort((x, y) => y.Position.z.CompareTo(x.Position.z));
 
             // get all the boxes that were placed in the solution and have the same dimension and sort them by order in list - first is lowest
-            List<Box> boxes = new List<Box>();
+            List<Box> boxes = new ();
             foreach (BoxPlacement placement in placements)
             {
-                Box newBox = new Box(placement.Box.Description, placement.Box.Dimensions, placement.Box.Restrictions, placement.Box.OrderInList, placement.Box.Preferences);
+                Box newBox = new(placement.Box.Description, placement.Box.Dimensions, placement.Box.Restrictions, placement.Box.OrderInList, placement.Box.Preferences);
                 boxes.Add(newBox);
             }
             boxes.Sort((x, y) => x.OrderInList.CompareTo(y.OrderInList));
-            //Debug.Log("boxes count: " + boxes.Count + " OF dimension: " + dimensions.Height + " " + dimensions.Width + " " + dimensions.Length);
 
             // update placements
             for (int i = 0; i < placements.Count; i++)
@@ -581,98 +413,279 @@ namespace ProjectAPI1.Classes
                 Box temp = placements[i].Box;
                 placements[i].Box = new Box(boxes[i].Description, temp.Dimensions, boxes[i].Restrictions, boxes[i].OrderInList, boxes[i].Preferences);
             }
-
         }
 
-        private List<Classes.Solution> GetRotatedSolutions(Classes.Solution sol, Dimensions containerDimensions)
+        private BoxPlacement? getFirstAvailableBoxPlacement(List<BoxPlacement> boxPlacements, Box box)
         {
-            List<Classes.Solution> solutions = new List<Classes.Solution>();
-            // add with no rotations
-            solutions.Add(sol);
-            // if one of the boxes has restrictions -> return
-            List<BoxPlacement> placements = sol.Placements;
-
-
-
-        // add with 180 rotation -> all items in the back are now in front
-            Classes.Solution rotated180 = new Classes.Solution();
-            rotated180.ProblemId = sol.ProblemId;
-            rotated180.ProfileId = sol.ProfileId;
-            rotated180.Placements = new List<BoxPlacement>();
-            foreach (BoxPlacement placement in sol.Placements)
+            // first check if it is restricted to a specific positions
+            if (box.Restrictions != null)
             {
-                // return with no rotation if restrictions apply
-                if (placement.Box.Restrictions != null)
+                string[] split = box.Restrictions.Split(':');
+                Position position2 = new Position();
+                position2.x = float.Parse(split[0]);
+                position2.y = float.Parse(split[1]);
+                position2.z = float.Parse(split[2]);
+                BoxPlacement boxPlacement = new BoxPlacement();
+                boxPlacement.Box = box;
+                boxPlacement.Position = position2;
+                if (Fits(boxPlacements, boxPlacement))
                 {
-                    return solutions;
+                    return boxPlacement;
                 }
-                BoxPlacement rotatedPlacement = new BoxPlacement();
-                rotatedPlacement.Box = placement.Box;
-                rotatedPlacement.Position = new Position();
-                rotatedPlacement.Position.x = placement.Position.x;
-                rotatedPlacement.Position.y = placement.Position.y;
-                rotatedPlacement.Position.z = containerDimensions.Length - placement.Position.z - placement.Box.Dimensions.Length;
-                rotated180.Placements.Add(rotatedPlacement);
-            }
-
-            solutions.Add(rotated180);
-
-            return solutions;
-        }
-
-        private float CalcScore(Classes.Solution sol)
-        {
-            float score = 0;
-            List<BoxPlacement> placements = sol.Placements;
-
-            int max_order = placements.Max(x => x.Box.OrderInList);
-            float mean_z = placements.Average(x => x.Position.z);
-
-            // reward for placing boxes in order
-            foreach (BoxPlacement placement in placements)
-            {
-                score += (placement.Position.z - mean_z) * (max_order - placement.Box.OrderInList);
-            }
-            score = score / placements.Count;
-            return score;
-        }
-
-        public override Classes.Solution Solve(Classes.Problem problem)
-        {
-            Algorithm algorithm = new GreedyAlgorithm(Profile);
-            Classes.Solution solution = algorithm.Solve(problem);
-            if (solution == null)
-            {
-                return null;
-            }
-            Dimensions containerDimensions = problem.ContainerDimensions;
-            List<Classes.Solution> solutions = GetRotatedSolutions(solution, containerDimensions);
-
-            float best_score = float.MinValue;
-            Classes.Solution best_solution = null;
-
-            foreach (Classes.Solution sol in solutions)
-            {
-                if (isInterrupted)
+                else
                 {
                     return null;
                 }
-                List<Dimensions> boxDimensions = GetAllBoxDimensions(sol);
-                foreach (Dimensions dimensions in boxDimensions)
+            }
+            // for unrestricted boxes
+            Position position = new Position();
+            position.x = 0;
+            position.y = 0;
+            position.z = 0;
+            List<float> allPossibleX = new List<float>();
+            List<float> allPossibleY = new List<float>();
+            List<float> allPossibleZ = new List<float>();
+            foreach (BoxPlacement boxPlacement in boxPlacements)
+            {
+                allPossibleX.Add(boxPlacement.Position.x + boxPlacement.Box.Dimensions.Width);
+                allPossibleY.Add(boxPlacement.Position.y + boxPlacement.Box.Dimensions.Height);
+                allPossibleZ.Add(boxPlacement.Position.z + boxPlacement.Box.Dimensions.Length);
+            }
+            // add 0,0,0
+            allPossibleX.Add(0);
+            allPossibleY.Add(0);
+            allPossibleZ.Add(0);
+
+            // remove duplicates
+            allPossibleX = allPossibleX.Distinct().ToList();
+            allPossibleY = allPossibleY.Distinct().ToList();
+            allPossibleZ = allPossibleZ.Distinct().ToList();
+            // sort so that the smallest values are first
+            allPossibleX.Sort();
+            allPossibleY.Sort();
+            allPossibleZ.Sort();
+
+
+            // find the first available position
+            foreach (float x in allPossibleX)
+            {
+                foreach (float y in allPossibleY)
                 {
-                    SortSimilar(dimensions, sol);
-                }
-                float score = CalcScore(sol);
-                if (score < best_score)
-                {
-                    best_score = score;
-                    best_solution = sol;
+                    foreach (float z in allPossibleZ)
+                    {
+                        position = new Position();
+                        position.x = x;
+                        position.y = y;
+                        position.z = z;
+                        BoxPlacement boxPlacement = new BoxPlacement();
+                        boxPlacement.Box = box;
+                        boxPlacement.Position = position;
+                        if (Fits(boxPlacements, boxPlacement))
+                        {
+                            return boxPlacement;
+                        }
+                    }
                 }
             }
-            finalScore = best_score;
+            return null;
+        }
+
+        private List<BoxPlacement> getPlacementFromGene(List<Box> gene)
+        {
+            List<BoxPlacement> placedBoxes = new();
+            foreach (Box box in gene)
+            {
+                BoxPlacement? boxPlacement = getFirstAvailableBoxPlacement(placedBoxes, box);
+                if (boxPlacement == null)
+                    break;
+                placedBoxes.Add(boxPlacement);
+            }
+            foreach (Dimensions dimension in allBoxDimensions)
+            {
+                SortSimilar(dimension, placedBoxes);
+            }
+            return placedBoxes;
+        }
+
+        private Solution getSolutionFromGene(List<Box> gene)
+        {
+            List<BoxPlacement> placement = getPlacementFromGene(gene);
+
+
+            Classes.Solution solution = new Classes.Solution();
+            solution.Placements = placement;
+            solution.ProblemId = ProblemId;
+            solution.ProfileId = Profile.Id;
             return solution;
         }
 
+        protected Box GetRandomOrientation(Box box, float heat)
+        {
+            if (box.Restrictions != null)
+            {
+                Box newBox2 = new Box(box.Description, box.Dimensions, box.Restrictions, box.OrderInList, box.Preferences);
+                return newBox2;
+            }
+            Box newBox = new Box(box.Description, box.Dimensions, box.Restrictions, box.OrderInList, box.Preferences);
+            // get number between 0 and 1
+            System.Random randomGenerator = new System.Random();
+            float random = (float)randomGenerator.NextDouble();
+            // if random is more than heat then return the box
+            if (random >= heat)
+            {
+                return newBox;
+            }
+            // get random orientation
+            int orientation = randomGenerator.Next(0, 5);
+            switch (orientation)
+            {
+                case 0:
+                    newBox.Dimensions = box.Dimensions;
+                    break;
+                case 1:
+                    newBox.Dimensions = new Dimensions(box.Dimensions.Length, box.Dimensions.Width, box.Dimensions.Height);
+                    break;
+                case 2:
+                    newBox.Dimensions = new Dimensions(box.Dimensions.Height, box.Dimensions.Length, box.Dimensions.Width);
+                    break;
+                case 3:
+                    newBox.Dimensions = new Dimensions(box.Dimensions.Width, box.Dimensions.Height, box.Dimensions.Length);
+                    break;
+                case 4:
+                    newBox.Dimensions = new Dimensions(box.Dimensions.Height, box.Dimensions.Width, box.Dimensions.Length);
+                    break;
+                case 5:
+                    newBox.Dimensions = new Dimensions(box.Dimensions.Length, box.Dimensions.Height, box.Dimensions.Width);
+                    break;
+            }
+            return newBox;
+        }
+
+        protected List<Box> SwapRandomBoxes(List<Box> boxes, float heat)
+        {
+            System.Random randomGenerator = new System.Random();
+            int numberToSwap = (int)(boxes.Count * heat);
+            for (int i = 0; i < numberToSwap; i++)
+            {
+                int index1 = randomGenerator.Next(0, boxes.Count);
+                int index2 = randomGenerator.Next(0, boxes.Count);
+                Box temp = boxes[index1];
+                boxes[index1] = boxes[index2];
+                boxes[index2] = temp;
+            }
+            return boxes;
+        }
+
+        protected static float GetRandomMutationStrength()
+        {
+            System.Random random = new();
+            double u1 = 1.0 - random.NextDouble(); // uniform random variable
+            double u2 = 1.0 - random.NextDouble(); // uniform random variable
+            double randStdNormal = Math.Sqrt(-2.0 * Math.Log(u1)) *
+                                Math.Sin(2.0 * Math.PI * u2); // random normal variable
+            return Math.Abs((float)(0.1 * randStdNormal));
+        }
+
+        private float Fitness(List<Box> gene)
+        {
+            float score = 0;
+            List<BoxPlacement> placedBoxes = getPlacementFromGene(gene);
+            HeuristicSwapping(placedBoxes);
+
+            // give a score of 1 for each plcaed box
+            score += placedBoxes.Count;
+
+            if (isOrdered)
+            {
+                // order placedBoxes based on OrderInList
+                placedBoxes = placedBoxes.OrderBy(x => x.Box.OrderInList).ToList();
+
+                int boxCount = placedBoxes.Count;
+
+                float median_z;
+                List<BoxPlacement> placedBoxesOrderedByZ = placedBoxes.OrderBy(x => x.Position.z).ToList();
+                if (placedBoxes.Count % 2 == 0)
+                {
+                    median_z = (placedBoxesOrderedByZ[(placedBoxes.Count / 2) - 1].Position.z
+                        + placedBoxesOrderedByZ[placedBoxes.Count / 2].Position.z) / 2;
+                }
+                else
+                {
+                    median_z = placedBoxes[(placedBoxes.Count - 1) / 2].Position.z;
+                }
+                float biggest_z = placedBoxes[placedBoxes.Count - 1].Position.z;
+                float smallest_z = placedBoxes[0].Position.z;
+
+
+
+                float orderScore = 0;
+                for (int i = 0; i < boxCount; i++)
+                {
+                    orderScore += (placedBoxes[i].Position.z - median_z) * (boxCount - i);
+                }
+
+                // normalize order score
+                if (biggest_z != smallest_z)
+                {
+                    orderScore = orderScore / (biggest_z - smallest_z);
+                }
+                orderScore = (orderLambda * orderScore) / (median_z * boxCount);
+
+                score += orderScore;
+            }
+            return score;
+        }
+
+        private void HeuristicSwapping(List<BoxPlacement> gene)
+        {
+            foreach (Dimensions dim in allBoxDimensions)
+            {
+                SortSimilar(dim, gene);
+            }
+        }
+
+        public override Solution Solve(Problem problem)
+        {
+            long finishingTime = DateTime.Now.Ticks + DateTime.Now.AddMinutes(maxTime).Ticks;
+
+
+            List<Box> bestGene = problem.Boxes.ToList();
+            this.allBoxDimensions = GetAllBoxDimensions(bestGene);
+            float bestScore = Fitness(bestGene);
+
+            // random restarts
+            while (DateTime.Now.Ticks < finishingTime)
+            {
+                int roundsWithoutImprovement = 0;
+                List<Box> tempBestGene = problem.Boxes.ToList();
+                float tempBestScore = Fitness(tempBestGene);
+
+                // This is a few generation cycles until we hit time limit or see no improvement
+                while (DateTime.Now.Ticks < finishingTime ||
+                    roundsWithoutImprovement >= maxRoundsWithoutImprovement ||
+                    (isOrdered == false && bestScore == problem.Boxes.Count))
+                {
+                    List<List<Box>> mutated = Mutate(tempBestGene, genesPerGeneration);
+                    foreach (List<Box> gene in mutated)
+                    {
+                        float score = Fitness(gene);
+                        if (score >= tempBestScore)
+                        {
+                            tempBestScore = score;
+                            tempBestGene = gene;
+                            roundsWithoutImprovement = -1;
+                        }
+                    }
+                    roundsWithoutImprovement++;
+                }
+                if(tempBestScore > bestScore)
+                {
+                    bestScore = tempBestScore;
+                    bestGene = tempBestGene;
+                }
+            }
+            return getSolutionFromGene(bestGene);
+        }
     }
 
     public class GeneralUnorderedAlgorithm : Algorithm
@@ -683,9 +696,8 @@ namespace ProjectAPI1.Classes
         {
             if (CheckUniform(problem.Boxes))
             {
-                Attempts += 1;
                 Algorithm alg1 = new UniformAlgorithm(Profile);
-                Classes.Solution sol1 = alg1.Solve(problem);
+                Classes.Solution sol1 = alg1.GetSolution(problem);
                 if (sol1 != null)
                 {
                     finalScore = float.MaxValue;
@@ -693,14 +705,12 @@ namespace ProjectAPI1.Classes
                 }
             }
 
-            Algorithm alg2 = new GreedyAlgorithm(Profile);
-            Classes.Solution sol2 = alg2.Solve(problem);
-            if (sol2 == null)
-            {
-                //Debug.Log("No solution found");
-            }
-            finalScore = float.MaxValue;
-            return sol2;
+            GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
+            alg2.SetMaxTime(10);
+            alg2.SetIsOrdered(false);
+            alg2.SetMaxRoundsWithoutImprovement(8);
+            alg2.SetGenesPerGeneration(50);
+            return alg2.GetSolution(problem);
         }
     }
 
@@ -712,9 +722,8 @@ namespace ProjectAPI1.Classes
         {
             if (CheckUniform(problem.Boxes))
             {
-                Attempts += 1;
                 Algorithm alg1 = new UniformOrderedAlgorithm(Profile);
-                Classes.Solution sol1 = alg1.Solve(problem);
+                Classes.Solution sol1 = alg1.GetSolution(problem);
                 if (sol1 != null)
                 {
                     finalScore = alg1.finalScore;
@@ -722,14 +731,12 @@ namespace ProjectAPI1.Classes
                 }
             }
 
-            Algorithm alg2 = new GreedyOrderedAlgorithm(Profile);
-            Classes.Solution sol2 = alg2.Solve(problem);
-            if (sol2 == null)
-            {
-                //Debug.Log("No solution found");
-            }
-            finalScore = alg2.finalScore;
-            return sol2;
+            GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
+            alg2.SetMaxTime(10);
+            alg2.SetIsOrdered(true);
+            alg2.SetMaxRoundsWithoutImprovement(8);
+            alg2.SetGenesPerGeneration(50);
+            return alg2.GetSolution(problem);
         }
     }
 }

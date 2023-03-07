@@ -59,6 +59,8 @@ namespace ProjectAPI1.Controllers
 
         private async Task RunAlgorithm(Classes.Profile profile, Classes.Problem problem, Models.Problem problem1)
         {
+            // debug the problem as json
+            Debug.WriteLine(JsonConvert.SerializeObject(problem));
             AlgorithmFactory algorithmFactory = new();
             Algorithm alg = algorithmFactory.GetAlgorithm(profile);
             Debug.WriteLine("Algorithm started");
