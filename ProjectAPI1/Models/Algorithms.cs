@@ -698,7 +698,7 @@ namespace ProjectAPI1.Classes
             }
 
             GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
-            alg2.SetMaxTime(1);
+            alg2.SetMaxTime(15);
             alg2.SetIsOrdered(false);
             alg2.SetMaxRoundsWithoutImprovement(25);
             alg2.SetGenesPerGeneration(10);
@@ -724,9 +724,9 @@ namespace ProjectAPI1.Classes
             }
 
             GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
-            alg2.SetMaxTime(1);
+            alg2.SetMaxTime(15);
             alg2.SetIsOrdered(true);
-            alg2.SetMaxRoundsWithoutImprovement(50);
+            alg2.SetMaxRoundsWithoutImprovement(25);
             alg2.SetGenesPerGeneration(10);
             return alg2.GetSolution(problem);
         }
