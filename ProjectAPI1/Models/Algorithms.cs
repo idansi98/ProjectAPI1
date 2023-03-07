@@ -8,7 +8,7 @@ using System.Data.SqlTypes;
 using System.Diagnostics.Metrics;
 using System.Linq;
 using MoreLinq;
-
+using System.Diagnostics;
 
 namespace ProjectAPI1.Classes
 {
@@ -510,9 +510,12 @@ namespace ProjectAPI1.Classes
         private Solution getSolutionFromGene(List<Box> gene)
         {
             List<BoxPlacement> placement = getPlacementFromGene(gene);
+            if (isOrdered)
+            {
+                HeuristicSwapping(placement);
+            }
 
-
-            Classes.Solution solution = new Classes.Solution();
+            Classes.Solution solution = new();
             solution.Placements = placement;
             solution.ProblemId = ProblemId;
             solution.ProfileId = Profile.Id;
@@ -590,47 +593,34 @@ namespace ProjectAPI1.Classes
         {
             float score = 0;
             List<BoxPlacement> placedBoxes = getPlacementFromGene(gene);
-            HeuristicSwapping(placedBoxes);
 
             // give a score of 1 for each plcaed box
             score += placedBoxes.Count;
 
-            if (isOrdered)
+            if (isOrdered && placedBoxes.Count>0)
             {
+                HeuristicSwapping(placedBoxes);
+
                 // order placedBoxes based on OrderInList
                 placedBoxes = placedBoxes.OrderBy(x => x.Box.OrderInList).ToList();
 
                 int boxCount = placedBoxes.Count;
 
-                float median_z;
                 List<BoxPlacement> placedBoxesOrderedByZ = placedBoxes.OrderBy(x => x.Position.z).ToList();
-                if (placedBoxes.Count % 2 == 0)
-                {
-                    median_z = (placedBoxesOrderedByZ[(placedBoxes.Count / 2) - 1].Position.z
-                        + placedBoxesOrderedByZ[placedBoxes.Count / 2].Position.z) / 2;
-                }
-                else
-                {
-                    median_z = placedBoxes[(placedBoxes.Count - 1) / 2].Position.z;
-                }
-                float biggest_z = placedBoxes[placedBoxes.Count - 1].Position.z;
-                float smallest_z = placedBoxes[0].Position.z;
 
-
+                float biggest_z = placedBoxesOrderedByZ[placedBoxes.Count - 1].Position.z;
 
                 float orderScore = 0;
                 for (int i = 0; i < boxCount; i++)
                 {
-                    orderScore += (placedBoxes[i].Position.z - median_z) * (boxCount - i);
+                    orderScore += (placedBoxes[i].Position.z) * (boxCount - i);
                 }
 
-                // normalize order score
-                if (biggest_z != smallest_z)
-                {
-                    orderScore = orderScore / (biggest_z - smallest_z);
-                }
-                orderScore = (orderLambda * orderScore) / (median_z * boxCount);
-
+                // normalize order score to be less than 1
+                orderScore = orderLambda * orderScore;
+                orderScore /= boxCount;
+                orderScore /= boxCount;
+                orderScore /= (biggest_z + 1);
                 score += orderScore;
             }
             return score;
@@ -646,7 +636,7 @@ namespace ProjectAPI1.Classes
 
         public override Solution Solve(Problem problem)
         {
-            long finishingTime = DateTime.Now.Ticks + DateTime.Now.AddMinutes(maxTime).Ticks;
+            DateTime finishingTime = DateTime.Now.AddMinutes(maxTime);
 
 
             List<Box> bestGene = problem.Boxes.ToList();
@@ -654,16 +644,15 @@ namespace ProjectAPI1.Classes
             float bestScore = Fitness(bestGene);
 
             // random restarts
-            while (DateTime.Now.Ticks < finishingTime)
+            while (DateTime.Now < finishingTime)
             {
                 int roundsWithoutImprovement = 0;
                 List<Box> tempBestGene = problem.Boxes.ToList();
                 float tempBestScore = Fitness(tempBestGene);
-
                 // This is a few generation cycles until we hit time limit or see no improvement
-                while (DateTime.Now.Ticks < finishingTime ||
-                    roundsWithoutImprovement >= maxRoundsWithoutImprovement ||
-                    (isOrdered == false && bestScore == problem.Boxes.Count))
+                while (DateTime.Now < finishingTime &&
+                    roundsWithoutImprovement < maxRoundsWithoutImprovement &&
+                    !(isOrdered == false && bestScore == problem.Boxes.Count))
                 {
                     List<List<Box>> mutated = Mutate(tempBestGene, genesPerGeneration);
                     foreach (List<Box> gene in mutated)
@@ -674,6 +663,7 @@ namespace ProjectAPI1.Classes
                             tempBestScore = score;
                             tempBestGene = gene;
                             roundsWithoutImprovement = -1;
+
                         }
                     }
                     roundsWithoutImprovement++;
@@ -682,6 +672,8 @@ namespace ProjectAPI1.Classes
                 {
                     bestScore = tempBestScore;
                     bestGene = tempBestGene;
+                    Debug.Print("Best score is " + bestScore);
+
                 }
             }
             return getSolutionFromGene(bestGene);
@@ -706,10 +698,10 @@ namespace ProjectAPI1.Classes
             }
 
             GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
-            alg2.SetMaxTime(10);
+            alg2.SetMaxTime(1);
             alg2.SetIsOrdered(false);
-            alg2.SetMaxRoundsWithoutImprovement(8);
-            alg2.SetGenesPerGeneration(50);
+            alg2.SetMaxRoundsWithoutImprovement(25);
+            alg2.SetGenesPerGeneration(10);
             return alg2.GetSolution(problem);
         }
     }
@@ -732,10 +724,10 @@ namespace ProjectAPI1.Classes
             }
 
             GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
-            alg2.SetMaxTime(10);
+            alg2.SetMaxTime(1);
             alg2.SetIsOrdered(true);
-            alg2.SetMaxRoundsWithoutImprovement(8);
-            alg2.SetGenesPerGeneration(50);
+            alg2.SetMaxRoundsWithoutImprovement(50);
+            alg2.SetGenesPerGeneration(10);
             return alg2.GetSolution(problem);
         }
     }
