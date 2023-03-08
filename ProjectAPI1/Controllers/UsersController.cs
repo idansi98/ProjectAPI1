@@ -45,6 +45,7 @@ namespace ProjectAPI1.Controllers
             profile.IsOutdated = 0;
             profile.Algorithm = "Ordered";
             profile.Name = "Default";
+            profile.ExtraSettings = "Metric";
            
             // convert it to a model
             Models.Profile profile1 = ClassConvert.ConvertProfile(profile, user.UserId);

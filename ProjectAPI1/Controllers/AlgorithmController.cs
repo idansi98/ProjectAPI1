@@ -21,6 +21,7 @@ namespace ProjectAPI1.Controllers
     {
         private readonly ProjectDbContext _context;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private static List<string> UserIDsRunning = new List<string>();
 
         public AlgorithmController(ProjectDbContext context, IServiceScopeFactory serviceScopeFactory)
         {
@@ -33,6 +34,11 @@ namespace ProjectAPI1.Controllers
         [HttpPost]
         public async Task<ActionResult> PostAlgorithm(ProblemProfile problemProfile)
         {
+            // check how many algorithms the user is running
+            if (UserIDsRunning.Count(id => id == problemProfile.Profile.User.UserId) >= 2)
+            {
+                return BadRequest();
+            }
             Classes.Profile profile = problemProfile.Profile;
             Classes.Problem problem = problemProfile.Problem;
             // get user profile
@@ -53,12 +59,28 @@ namespace ProjectAPI1.Controllers
                 _context.Problems.Add(problem1);
                 await _context.SaveChangesAsync();
             }
+            UserIDsRunning.Add(profile.User.UserId);
             _ = RunAlgorithm(profile, problem, problem1);
+            UserIDsRunning.Remove(profile.User.UserId);
             return Ok();
+
+
+        }
+
+
+        // GET: api/Algorithm/running/{id}
+        [HttpGet("running/{id}")]
+        public ActionResult<int> GetRunningAlgorithms(string id)
+        {
+            int runningCount = UserIDsRunning.Count(uid => uid == id);
+
+            return Ok(runningCount.ToString() + "/2");
         }
 
         private async Task RunAlgorithm(Classes.Profile profile, Classes.Problem problem, Models.Problem problem1)
         {
+            // debug the problem as json
+            Debug.WriteLine(JsonConvert.SerializeObject(problem));
             AlgorithmFactory algorithmFactory = new();
             Algorithm alg = algorithmFactory.GetAlgorithm(profile);
             Debug.WriteLine("Algorithm started");
