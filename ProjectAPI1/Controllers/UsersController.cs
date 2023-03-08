@@ -5,9 +5,10 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ProjectAPI1.Classes;
 using ProjectAPI1.Models;
 
-//idan
+
 namespace ProjectAPI1.Controllers
 {
     [Route("api/[controller]")]
@@ -73,17 +74,16 @@ namespace ProjectAPI1.Controllers
             users = users.Where(u => u.UserId == id).ToList();
             if(users.Count > 0)
             {
-                return Ok("User exists");
+                return users[0];
             }
-            return NotFound("User doesn't exist");
+            return null;
         }
 
- 
+        // Delete: api/Users
+        [HttpDelete]
 
-        private bool UserExists(int id)
-        {
-            return _context.Users.Any(e => e.Number == id);
-        }
+
+
 
         static string GenerateUserID(int length = 32)
         {
