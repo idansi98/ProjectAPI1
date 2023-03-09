@@ -64,6 +64,12 @@ namespace ProjectAPI1.Controllers
             return Ok(user.UserId); 
         }
 
+        // GET: api/Users
+        [HttpGet("idan")]
+        public async Task<ActionResult<List<User>>> GetUsers()
+        {
+            return Ok(await _context.Users.ToListAsync());
+        }
 
         // GET: api/Users/5
         [HttpGet("{id}")]
@@ -82,6 +88,22 @@ namespace ProjectAPI1.Controllers
 
         // Delete: api/Users
         [HttpDelete]
+        public async Task<IActionResult> DeleteAllUsers()
+        {
+            // get list of all users
+            List<User> users = await _context.Users.ToListAsync();
+            // delete all users
+            _context.Users.RemoveRange(users);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw;
+            }
+            return Ok();
+        }
 
 
 

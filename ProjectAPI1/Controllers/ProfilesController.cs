@@ -21,6 +21,13 @@ namespace ProjectAPI1.Controllers
             _context = context;
         }
 
+        // GET: api/Profiles
+        [HttpGet]
+        public async Task<ActionResult<List<Classes.Profile>>> GetProfiles()
+        {
+            List < Models.Profile > profiles = await _context.Profiles.ToListAsync();
+            return Ok(ClassConvert.ConvertProfiles(profiles));
+        }
 
         // GET: api/Profiles/5
         [HttpGet("{id}")]
@@ -78,6 +85,25 @@ namespace ProjectAPI1.Controllers
                 }
             }
             return Ok(profile1.Id);
+        }
+
+        // Delete: api/Profiles
+        [HttpDelete]
+        public async Task<IActionResult> DeleteAllProfiles()
+        {
+            // get list of all users
+            List<Models.Profile> profiles = await _context.Profiles.ToListAsync();
+            // delete all users
+            _context.Profiles.RemoveRange(profiles);
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException)
+            {
+                throw;
+            }
+            return Ok();
         }
 
         // DELETE: api/Profiles/5
