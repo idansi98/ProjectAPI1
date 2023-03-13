@@ -41,9 +41,11 @@ namespace ProjectAPI1.Controllers
             }
             Classes.Profile profile = problemProfile.Profile;
             Classes.Problem problem = problemProfile.Problem;
+            UserIDsRunning.Add(profile.User.UserId);
             // get user profile
             if (profile == null || profile.Algorithm == null)
             {
+                UserIDsRunning.Remove(profile.User.UserId);
                 return BadRequest();
             }
 
@@ -59,12 +61,9 @@ namespace ProjectAPI1.Controllers
                 _context.Problems.Add(problem1);
                 await _context.SaveChangesAsync();
             }
-            UserIDsRunning.Add(profile.User.UserId);
             _ = RunAlgorithm(profile, problem, problem1);
             UserIDsRunning.Remove(profile.User.UserId);
             return Ok();
-
-
         }
 
 
@@ -93,6 +92,7 @@ namespace ProjectAPI1.Controllers
             solution1.Id = _context.Solutions.Count() + 1;
             solution1.ProblemId = problem1.Id;
             solution1.ProfileId = profile.Id;
+            solution1.Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             using (var scope = _serviceScopeFactory.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<ProjectDbContext>();

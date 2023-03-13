@@ -81,9 +81,9 @@ namespace ProjectAPI1.Controllers
             users = users.Where(u => u.UserId == id).ToList();
             if(users.Count > 0)
             {
-                return users[0];
+                return Ok(users[0]);
             }
-            return null;
+            return Ok(null);
         }
 
         // Delete: api/Users

@@ -33,6 +33,7 @@ namespace ProjectAPI1.Models
             solution1.Id = solution.Id;
             solution1.ProblemId = solution.ProblemId;
             solution1.ProfileId = solution.ProfileId;
+            solution1.Time = solution.Time;
             solution1.Placements = Newtonsoft.Json.JsonConvert.DeserializeObject<List<BoxPlacement>>(solution.Placements);
             return solution1;
         }
@@ -44,7 +45,7 @@ namespace ProjectAPI1.Models
             solution1.ProblemId = solution.ProblemId;
             solution1.ProfileId = solution.ProfileId;
             solution1.Placements = Newtonsoft.Json.JsonConvert.SerializeObject(solution.Placements);
-            solution1.Time = DateTime.Now.ToString();
+            solution1.Time = solution.Time;
             return solution1;
         }
 

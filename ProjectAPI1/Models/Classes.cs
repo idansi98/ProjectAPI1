@@ -107,6 +107,7 @@ namespace ProjectAPI1.Classes
         public int ProfileId { get; set; }
         public List<BoxPlacement> Placements { get; set; } = default!;
         public int Id { get; set; }
+        public string? Time { get; set; }
     }
 #nullable disable
     public class Profile
