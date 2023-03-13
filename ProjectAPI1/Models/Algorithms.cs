@@ -41,7 +41,6 @@ namespace ProjectAPI1.Classes
         protected int ProblemId;
         public static int BoxFitted;
         public static bool isInterrupted;
-        public float finalScore;
 
         protected Classes.Solution? Solution;
 
@@ -74,15 +73,16 @@ namespace ProjectAPI1.Classes
             {
                 if (box.Restrictions != null)
                 {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
         protected bool CheckUniform(List<Box> Boxes)
         {
             if (Boxes.Count == 0)
             {
+                Debug.Print("No boxes");
                 return false;
             }
             Dimensions firstBoxDimensions = Boxes[0].Dimensions;
@@ -90,11 +90,14 @@ namespace ProjectAPI1.Classes
             {
                 if (box.Dimensions.Height != firstBoxDimensions.Height || box.Dimensions.Width != firstBoxDimensions.Width || box.Dimensions.Length != firstBoxDimensions.Length)
                 {
+                    Debug.Print("Boxes are not uniform");
                     return false;
+
                 }
             }
             if (HasRestrictions(Boxes))
             {
+                Debug.Print("Boxes have restrictions");
                 return false;
             } else
             {
@@ -200,11 +203,9 @@ namespace ProjectAPI1.Classes
             {
                 if (OniformFits(rotation))
                 {
-                    finalScore = float.MaxValue;
                     return ArrangeBoxes(rotation);
                 }
             }
-            finalScore = float.MinValue;
             return null;
         }
 
@@ -258,7 +259,6 @@ namespace ProjectAPI1.Classes
             // order boxes based on ORderInList, where the biggest numbers will be first
             problem.Boxes.Sort((x, y) => y.OrderInList.CompareTo(x.OrderInList));
             Classes.Solution solution = algorithm.Solve(problem);
-            finalScore = float.MaxValue;
             return solution;
         }
     }
@@ -467,11 +467,11 @@ namespace ProjectAPI1.Classes
 
 
             // find the first available position
-            foreach (float x in allPossibleX)
+            foreach (float z in allPossibleZ)
             {
                 foreach (float y in allPossibleY)
                 {
-                    foreach (float z in allPossibleZ)
+                    foreach (float x in allPossibleX)
                     {
                         position = new Position();
                         position.x = x;
@@ -692,7 +692,6 @@ namespace ProjectAPI1.Classes
                 Classes.Solution sol1 = alg1.GetSolution(problem);
                 if (sol1 != null)
                 {
-                    finalScore = float.MaxValue;
                     return sol1;
                 }
             }
@@ -712,13 +711,17 @@ namespace ProjectAPI1.Classes
 
         public override Classes.Solution Solve(Classes.Problem problem)
         {
+            // print problem as json
+            string json = JsonConvert.SerializeObject(problem);
+            Debug.Print(json);
+
             if (CheckUniform(problem.Boxes))
             {
+                Debug.Print("Uniform");
                 Algorithm alg1 = new UniformOrderedAlgorithm(Profile);
                 Classes.Solution sol1 = alg1.GetSolution(problem);
                 if (sol1 != null)
                 {
-                    finalScore = alg1.finalScore;
                     return sol1;
                 }
             }
