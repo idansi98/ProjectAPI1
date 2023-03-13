@@ -20,6 +20,7 @@ namespace ProjectAPI1.Controllers
     public class AlgorithmController : ControllerBase
     {
         private readonly ProjectDbContext _context;
+        private readonly object balanceLock = new object();
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private static List<string> UserIDsRunning = new List<string>();
 
@@ -34,14 +35,17 @@ namespace ProjectAPI1.Controllers
         [HttpPost]
         public async Task<ActionResult> PostAlgorithm(ProblemProfile problemProfile)
         {
-            // check how many algorithms the user is running
-            if (UserIDsRunning.Count(id => id == problemProfile.Profile.User.UserId) >= 2)
-            {
-                return BadRequest();
-            }
             Classes.Profile profile = problemProfile.Profile;
             Classes.Problem problem = problemProfile.Problem;
-            UserIDsRunning.Add(profile.User.UserId);
+            // check how many algorithms the user is running
+            lock (balanceLock)
+            {
+                if (UserIDsRunning.Count(id => id == problemProfile.Profile.User.UserId) >= 2)
+                {
+                    return BadRequest();
+                }
+                UserIDsRunning.Add(profile.User.UserId);
+            }
             // get user profile
             if (profile == null || profile.Algorithm == null)
             {
