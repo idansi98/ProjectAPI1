@@ -55,7 +55,7 @@ namespace ProjectAPI1.Controllers
         //Create post requset
         // POST: api/Problems
         [HttpPost]
-        public async Task<ActionResult<Classes.Problem>> PostProblem(int id, string name)
+        public async Task<IActionResult> PostProblem(int id, string name)
         {
             var problem = await _context.Problems.FindAsync(id);
             problem.Name = name;
