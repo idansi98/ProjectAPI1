@@ -29,7 +29,7 @@ namespace ProjectAPI1.Controllers
             return Ok(ClassConvert.ConvertProblems(problems));
         }
 
-         // BY USER
+        // BY USER
         // GET: api/Problems/5
         [HttpGet("{id}")]
         public async Task<ActionResult<List<Classes.Problem>>> GetProblems(String id)
@@ -52,6 +52,22 @@ namespace ProjectAPI1.Controllers
             return Ok(ClassConvert.ConvertProblems(userProblems));
         }
 
-
+        //Create post requset
+        // POST: api/Problems
+        [HttpPost]
+        public async Task<ActionResult<Classes.Problem>> PostProblem(int id, string name)
+        {
+            var problem = await _context.Problems.FindAsync(id);
+            problem.Name = name;
+            if (problem == null)
+            {
+                return NotFound();
+            }
+            // convert the problem to a class problem
+            Classes.Problem problem2 = ClassConvert.ConvertProblem(problem);
+            _context.Problems.Update(problem);
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
     }
 }
