@@ -62,6 +62,17 @@ namespace ProjectAPI1.Controllers
                 // debug profile as json
                 Debug.WriteLine(JsonConvert.SerializeObject(profile));
 
+                // get all user problems
+                List<Models.Problem> problems = _context.Problems.Where(p => p.ExtraPreferences == profile.User.UserId).ToList();
+                string oldName=  problem1.Name;
+                int i = 1;
+                while(problems.Any(p => p.Name == problem1.Name))
+                {
+                    problem1.Name = oldName + " (" + i + ")";
+                    i++;
+                }
+
+
                 _context.Problems.Add(problem1);
                 await _context.SaveChangesAsync();
             }

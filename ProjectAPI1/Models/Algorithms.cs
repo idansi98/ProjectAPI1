@@ -597,6 +597,15 @@ namespace ProjectAPI1.Classes
             // give a score of 1 for each plcaed box
             score += placedBoxes.Count;
 
+            // give an additional score of 10 for each restricted box that is placed
+            foreach (BoxPlacement boxPlacement in placedBoxes)
+            {
+                if (boxPlacement.Box.Restrictions != null)
+                {
+                    score += 10;
+                }
+            }
+
             if (isOrdered && placedBoxes.Count>0)
             {
                 HeuristicSwapping(placedBoxes);
@@ -644,7 +653,8 @@ namespace ProjectAPI1.Classes
             float bestScore = Fitness(bestGene);
 
             // random restarts
-            while (DateTime.Now < finishingTime)
+            while (DateTime.Now < finishingTime &&
+                !(isOrdered == false && bestScore == problem.Boxes.Count))
             {
                 int roundsWithoutImprovement = 0;
                 List<Box> tempBestGene = problem.Boxes.ToList();
