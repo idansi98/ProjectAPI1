@@ -651,10 +651,25 @@ namespace ProjectAPI1.Classes
             List<Box> bestGene = problem.Boxes.ToList();
             this.allBoxDimensions = GetAllBoxDimensions(bestGene);
             float bestScore = Fitness(bestGene);
+            Debug.WriteLine("Initial score: " + bestScore);
+            float maxScoreUnordered = 0;
+            if (!isOrdered)
+            {
+                maxScoreUnordered += problem.Boxes.Count;
+                foreach(Box box in problem.Boxes)
+                {
+                    if (box.Restrictions != null)
+                    {
+                        maxScoreUnordered += 10;
+                    }
+                }
+                Debug.WriteLine("Max score unordered: " + maxScoreUnordered);
+                
+            }
 
             // random restarts
             while (DateTime.Now < finishingTime &&
-                !(isOrdered == false && bestScore == problem.Boxes.Count))
+                !(isOrdered == false && bestScore == maxScoreUnordered))
             {
                 int roundsWithoutImprovement = 0;
                 List<Box> tempBestGene = problem.Boxes.ToList();
@@ -662,7 +677,7 @@ namespace ProjectAPI1.Classes
                 // This is a few generation cycles until we hit time limit or see no improvement
                 while (DateTime.Now < finishingTime &&
                     roundsWithoutImprovement < maxRoundsWithoutImprovement &&
-                    !(isOrdered == false && bestScore == problem.Boxes.Count))
+                    !(isOrdered == false && bestScore == maxScoreUnordered))
                 {
                     List<List<Box>> mutated = Mutate(tempBestGene, genesPerGeneration);
                     foreach (List<Box> gene in mutated)

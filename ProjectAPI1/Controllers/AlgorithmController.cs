@@ -23,6 +23,7 @@ namespace ProjectAPI1.Controllers
         private readonly object balanceLock = new object();
         private readonly IServiceScopeFactory _serviceScopeFactory;
         private static List<string> UserIDsRunning = new List<string>();
+        private static int MaxRunning = 5;
 
         public AlgorithmController(ProjectDbContext context, IServiceScopeFactory serviceScopeFactory)
         {
@@ -40,7 +41,7 @@ namespace ProjectAPI1.Controllers
             // check how many algorithms the user is running
             lock (balanceLock)
             {
-                if (UserIDsRunning.Count(id => id == problemProfile.Profile.User.UserId) >= 2)
+                if (UserIDsRunning.Count(id => id == problemProfile.Profile.User.UserId) >= MaxRunning)
                 {
                     return BadRequest();
                 }
@@ -88,7 +89,7 @@ namespace ProjectAPI1.Controllers
         {
             int runningCount = UserIDsRunning.Count(uid => uid == id);
 
-            return Ok(runningCount.ToString() + "/2");
+            return Ok(runningCount.ToString() + "/" + MaxRunning);
         }
 
         private async Task RunAlgorithm(Classes.Profile profile, Classes.Problem problem, Models.Problem problem1)
