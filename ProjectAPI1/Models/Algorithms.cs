@@ -39,8 +39,6 @@ namespace ProjectAPI1.Classes
         protected Dimensions? ContainerDimensions;
         protected string? ExtraPreferences;
         protected int ProblemId;
-        public static int BoxFitted;
-        public static bool isInterrupted;
 
         protected Classes.Solution? Solution;
 
@@ -121,6 +119,19 @@ namespace ProjectAPI1.Classes
 
         protected bool Fits(List<BoxPlacement> boxPlacements, BoxPlacement boxPlacement)
         {
+            float x2Min = boxPlacement.Position.x;
+            float x2Max = boxPlacement.Position.x + boxPlacement.Box.Dimensions.Width;
+            float y2Min = boxPlacement.Position.y;
+            float y2Max = boxPlacement.Position.y + boxPlacement.Box.Dimensions.Height;
+            float z2Min = boxPlacement.Position.z;
+            float z2Max = boxPlacement.Position.z + boxPlacement.Box.Dimensions.Length;
+
+            // if intersecting the container return false
+            if (x2Min < 0 || x2Max > ContainerDimensions.Width || y2Min < 0 || y2Max > ContainerDimensions.Height || z2Min < 0 || z2Max > ContainerDimensions.Length)
+            {
+                return false;
+            }
+
             foreach (BoxPlacement placedBox in boxPlacements)
             {
                 float x1Min = placedBox.Position.x;
@@ -130,18 +141,6 @@ namespace ProjectAPI1.Classes
                 float z1Min = placedBox.Position.z;
                 float z1Max = placedBox.Position.z + placedBox.Box.Dimensions.Length;
 
-                float x2Min = boxPlacement.Position.x;
-                float x2Max = boxPlacement.Position.x + boxPlacement.Box.Dimensions.Width;
-                float y2Min = boxPlacement.Position.y;
-                float y2Max = boxPlacement.Position.y + boxPlacement.Box.Dimensions.Height;
-                float z2Min = boxPlacement.Position.z;
-                float z2Max = boxPlacement.Position.z + boxPlacement.Box.Dimensions.Length;
-
-                // if intersecting the container return false
-                if (x2Min < 0 || x2Max > ContainerDimensions.Width || y2Min < 0 || y2Max > ContainerDimensions.Height || z2Min < 0 || z2Max > ContainerDimensions.Length)
-                {
-                    return false;
-                }
                 // if not intersecting then coninue 
                 if (x1Max <= x2Min || x2Max <= x1Min || y1Max <= y2Min || y2Max <= y1Min || z1Max <= z2Min || z2Max <= z1Min)
                 {
@@ -500,10 +499,11 @@ namespace ProjectAPI1.Classes
                     break;
                 placedBoxes.Add(boxPlacement);
             }
-            foreach (Dimensions dimension in allBoxDimensions)
-            {
-                SortSimilar(dimension, placedBoxes);
-            }
+            // not needed?
+            //foreach (Dimensions dimension in allBoxDimensions)
+            //{
+            //    SortSimilar(dimension, placedBoxes);
+            //}
             return placedBoxes;
         }
 
