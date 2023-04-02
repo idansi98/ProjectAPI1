@@ -30,14 +30,14 @@ namespace ProjectAPI1.Controllers
             user.UserId = GenerateUserID();
             user.Number = _context.Users.Count() + 1;
             _context.Users.Add(user);
-            try
+           /* try
             {
                 await _context.SaveChangesAsync();
             }
             catch (DbUpdateException)
             {
                 throw;
-            }
+            }*/
 
             // give the user a default profile
             Classes.Profile profile = new Classes.Profile();
@@ -45,7 +45,7 @@ namespace ProjectAPI1.Controllers
             profile.IsOutdated = 0;
             profile.Algorithm = "Ordered";
             profile.Name = "Default";
-            profile.ExtraSettings = "Metric";
+            profile.ExtraSettings = "5 minutes";
            
             // convert it to a model
             Models.Profile profile1 = ClassConvert.ConvertProfile(profile, user.UserId);

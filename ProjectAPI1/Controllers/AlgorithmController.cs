@@ -116,13 +116,5 @@ namespace ProjectAPI1.Controllers
                 await context.SaveChangesAsync();
             }
         }
-
-
-
-
-
-
-
-
     }
 }

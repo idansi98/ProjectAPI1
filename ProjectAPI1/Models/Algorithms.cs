@@ -52,6 +52,39 @@ namespace ProjectAPI1.Classes
             Profile = profile;
         }
 
+        public static int ConvertToMinutes(string runningTimeStr)
+        {
+            if (runningTimeStr == "1 minute")
+            {
+                return 1;
+            }
+            if (runningTimeStr == "5 minutes")
+            {
+                return 5;
+            }
+            if (runningTimeStr == "15 minutes")
+            {
+                return 15;
+            }
+            if (runningTimeStr == "30 minutes")
+            {
+                return 30;
+            }
+            if (runningTimeStr == "1 hour")
+            {
+                return 60;
+            }
+            if (runningTimeStr == "2 hours")
+            {
+                return 120;
+            }
+            if (runningTimeStr == "5 hours")
+            {
+                return 300;
+            }
+            return 1;
+        }
+
         protected bool CheckVolume(Classes.Problem problem)
         {
             Dimensions containerDimensions = problem.ContainerDimensions;
@@ -722,7 +755,7 @@ namespace ProjectAPI1.Classes
             }
 
             GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
-            alg2.SetMaxTime(1);
+            alg2.SetMaxTime(Algorithm.ConvertToMinutes(Profile.ExtraSettings));
             alg2.SetIsOrdered(false);
             alg2.SetMaxRoundsWithoutImprovement(25);
             alg2.SetGenesPerGeneration(10);
@@ -752,7 +785,7 @@ namespace ProjectAPI1.Classes
             }
 
             GeneticAlgorithm alg2 = new GeneticAlgorithm(Profile);
-            alg2.SetMaxTime(1);
+            alg2.SetMaxTime(Algorithm.ConvertToMinutes(Profile.ExtraSettings));
             alg2.SetIsOrdered(true);
             alg2.SetMaxRoundsWithoutImprovement(25);
             alg2.SetGenesPerGeneration(10);
