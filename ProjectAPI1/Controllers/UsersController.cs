@@ -9,6 +9,7 @@ using ProjectAPI1.Classes;
 using ProjectAPI1.Models;
 
 
+
 namespace ProjectAPI1.Controllers
 {
     [Route("api/[controller]")]
@@ -57,27 +58,26 @@ namespace ProjectAPI1.Controllers
 
         //Post: api/Users/5
         [HttpPost("{name}")]
-        public async Task<ActionResult> UpdatePassword(string name, string oldPassword, string newPassword)
+        public async Task<ActionResult> UpdatePassword(string userName, string oldPassword, string newPassword)
         {
-            var profile = await _context.Profiles.FindAsync(id);
-            profile.IsOutdated = 1;
-            if (profile == null)
+            List<Models.User> users = await _context.Users.ToListAsync();
+            User user = null;
+            user = users.Find(x => x.UserName == userName);
+            if (user != null)
             {
-                return NotFound();
+                if (user.Password == oldPassword) 
+                {
+                    user.Password = newPassword;
+                    _context.Users.Update(user);
+                    await _context.SaveChangesAsync();
+                    return NoContent();
+                }
+                else
+                {
+                    return BadRequest();
+                }
             }
-            // convert the profile to a class profile
-            Classes.Profile profile2 = ClassConvert.ConvertProfile(profile);
-            // check if the profile is the default profile
-            if (profile2.IsDefault == 1)
-            {
-                return BadRequest();
-            }
-            else
-            {
-                _context.Profiles.Update(profile);
-                await _context.SaveChangesAsync();
-                return NoContent();
-            }
+            return BadRequest();
         }
 
         // GET: api/Users/idan
