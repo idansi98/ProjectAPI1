@@ -121,7 +121,15 @@ namespace ProjectAPI1.Controllers
             await _context.SaveChangesAsync();
             return Ok(tempPassword);
         }
-        
+
+        // GET: api/Users/van
+        [HttpGet("van")]
+        public async Task<ActionResult<string>> GenerateValidationString()
+        {
+            string validationString = CreateValidationString();
+            return Ok(validationString);
+        }
+
         // Delete: api/Users
         [HttpDelete]
         public async Task<IActionResult> DeleteAllUsers()
@@ -148,7 +156,14 @@ namespace ProjectAPI1.Controllers
             return new string(Enumerable.Range(0, length).Select(_ => chars[random.Next(chars.Length)]).ToArray());
         }
 
-        static string CreateNewPassword(int length = 12)
+        static string CreateNewPassword(int length = 10)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Range(0, length).Select(_ => chars[random.Next(chars.Length)]).ToArray());
+        }
+
+        static string CreateValidationString(int length = 6)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             var random = new Random();
