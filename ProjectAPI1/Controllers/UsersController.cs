@@ -57,27 +57,16 @@ namespace ProjectAPI1.Controllers
         }
 
         //Post: api/Users/5
-        [HttpPost("{name}")]
-        public async Task<ActionResult> UpdatePassword(string userName, string oldPassword, string newPassword)
+        [HttpPost("{email}")]
+        public async Task<ActionResult> UpdatePassword(string email, string newPassword)
         {
             List<Models.User> users = await _context.Users.ToListAsync();
             User user = null;
-            user = users.Find(x => x.UserName == userName);
-            if (user != null)
-            {
-                if (user.Password == oldPassword) 
-                {
-                    user.Password = newPassword;
-                    _context.Users.Update(user);
-                    await _context.SaveChangesAsync();
-                    return NoContent();
-                }
-                else
-                {
-                    return BadRequest();
-                }
-            }
-            return BadRequest();
+            user = users.Find(x => x.Email == email);
+            user.Password = newPassword;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return NoContent();
         }
 
         // GET: api/Users/idan
@@ -88,13 +77,13 @@ namespace ProjectAPI1.Controllers
         }
 
         // GET: api/Users/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<User>> CheckUserExists(string name)
+        [HttpGet("{email}")]
+        public async Task<ActionResult<User>> CheckUserExists(string email)
         {
             // get list of all users
             List<User> users = await _context.Users.ToListAsync();
             // filter all users so only users with the same user id are returned
-            users = users.Where(u => u.UserName == name).ToList();
+            users = users.Where(u => u.Email == email).ToList();
             if(users.Count > 0)
             {
                 return Ok(users[0]);
@@ -116,6 +105,23 @@ namespace ProjectAPI1.Controllers
             }
             return Ok(null);
         }
+
+        // GET: api/Users/maor/5
+        [HttpGet("maor/{email}")]
+        public async Task<ActionResult<string>> GenerateTempPassword(string email)
+        {
+            // get list of all users
+            List<Models.User> users = await _context.Users.ToListAsync();
+            // filter all users so only users with the same user id are returned
+            User user = null;
+            user = users.Find(u => u.Email == email);
+            string tempPassword = CreateNewPassword();
+            user.Password = tempPassword;
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            return Ok(tempPassword);
+        }
+        
         // Delete: api/Users
         [HttpDelete]
         public async Task<IActionResult> DeleteAllUsers()
@@ -136,6 +142,13 @@ namespace ProjectAPI1.Controllers
         }
 
         static string GenerateUserID(int length = 32)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Range(0, length).Select(_ => chars[random.Next(chars.Length)]).ToArray());
+        }
+
+        static string CreateNewPassword(int length = 12)
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
             var random = new Random();
