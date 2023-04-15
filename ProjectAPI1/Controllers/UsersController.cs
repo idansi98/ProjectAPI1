@@ -57,13 +57,13 @@ namespace ProjectAPI1.Controllers
         }
 
         //Post: api/Users/5
-        [HttpPost("{email}")]
-        public async Task<ActionResult> UpdatePassword(string email, string newPassword)
+        [HttpPost("{userID}")]
+        public async Task<ActionResult> UpdatePassword(string userID, User user1)
         {
             List<Models.User> users = await _context.Users.ToListAsync();
             User user = null;
-            user = users.Find(x => x.Email == email);
-            user.Password = newPassword;
+            user = users.Find(x => x.UserId == user1.UserId);
+            user.Password = user1.Password;
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return NoContent();
