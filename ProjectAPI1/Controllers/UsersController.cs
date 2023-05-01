@@ -63,7 +63,8 @@ namespace ProjectAPI1.Controllers
             List<Models.User> users = await _context.Users.ToListAsync();
             User user = null;
             user = users.Find(x => x.UserId == user1.UserId);
-            user.Password = user1.Password;
+            user.Password = user1.TempPassword;
+            user.TempPassword = user1.TempPassword;
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return NoContent();
@@ -116,7 +117,7 @@ namespace ProjectAPI1.Controllers
             User user = null;
             user = users.Find(u => u.Email == email);
             string tempPassword = CreateNewPassword();
-            user.Password = tempPassword;
+            user.TempPassword = tempPassword;
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
             return Ok(tempPassword);
