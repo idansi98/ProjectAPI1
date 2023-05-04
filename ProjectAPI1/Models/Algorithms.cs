@@ -207,6 +207,9 @@ namespace ProjectAPI1.Classes
                 if (Solution == null)
                 {
                     Solution = Solve(problem);
+                    List<BoxPlacement> placement = Solution.Placements;
+                    placement = placement.OrderBy(o => o.Box.OrderInList).ToList();
+                    Solution.Placements = placement;
                 }
                 return Solution;
             }
