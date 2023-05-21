@@ -373,12 +373,13 @@ namespace ProjectAPI1.Classes
             List<Dimensions> boxDimensions = new List<Dimensions>();
             foreach (Box box in boxes)
             {
-                List<float> dims = new();
-                dims.Add(box.Dimensions.Width);
-                dims.Add(box.Dimensions.Height);
-                dims.Add(box.Dimensions.Width);
-                // sort
-                dims = dims.OrderBy(x => x).ToList();
+                List<float> dims = new()
+                {
+                    box.Dimensions.Width,
+                    box.Dimensions.Height,
+                    box.Dimensions.Length
+                };
+                dims.Sort();
                 Dimensions dim = new Dimensions(dims[0], dims[1], dims[2]);
                 boxDimensions.Add(dim);
             }
@@ -428,6 +429,7 @@ namespace ProjectAPI1.Classes
             {
                 placements.AddRange(GetAllPlacementsForDimension(dim, placedBoxes));
             }
+
 
             // sort them by Z index
 
@@ -535,11 +537,6 @@ namespace ProjectAPI1.Classes
                     break;
                 placedBoxes.Add(boxPlacement);
             }
-            // not needed?
-            //foreach (Dimensions dimension in allBoxDimensions)
-            //{
-            //    SortSimilar(dimension, placedBoxes);
-            //}
             return placedBoxes;
         }
 
